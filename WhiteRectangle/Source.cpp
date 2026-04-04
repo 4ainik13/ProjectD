@@ -8,7 +8,8 @@
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
-
+#include <sys/stat.h>
+#include <direct.h>
 #include <iostream>
 #include "shaderHandler.h"
 #include "stopwatch.h"
@@ -300,6 +301,21 @@ void saveImage_fromData_counting(const unsigned char* data, int& imageCount, int
     saveImage_fromData(data, height, width, name);
 }
 
+bool dir_exists(const std::string& dir)
+{
+    struct stat buffer;
+    return (stat(dir.c_str(), &buffer) == 0);
+}
+
+void summonDir(const std::string& dir)
+{
+    if (!dir_exists(dir))
+    {
+        int res = _mkdir(dir.c_str());
+        if (res != 0) std::cout << "Directory have failed to be summoned";
+    }
+}
+
 //Сохраняем текущий кадр в формате bmp на компьютере. 
 //global_pixelsData указывает на последний записанный кадр в чистом формате.
 void saveCurrentImage(GLsizei width, GLsizei height, std::string name = "test")
@@ -307,9 +323,12 @@ void saveCurrentImage(GLsizei width, GLsizei height, std::string name = "test")
     unsigned char channels = 3;
 
     glReadPixels(pixelsX, pixelsY, width, height, GL_RGB, GL_UNSIGNED_BYTE, global_pixelsData);
-        
 
-    std::string filename = "images\\" + name + ".bmp";
+    std::string directory = "images\\";
+    std::string filename = directory + name + ".bmp";
+
+    summonDir(directory);
+
     stbi_flip_vertically_on_write(1);
     stbi_write_bmp(filename.c_str(), width, height, channels, global_pixelsData);
 }
