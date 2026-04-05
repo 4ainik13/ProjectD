@@ -197,7 +197,7 @@ int main()
 
         if (window_watch.ticked())
         {
-            int d_width = 160, d_height = 160;
+            int d_width = 320, d_height = pixelsH; //изначально 160
             //saveImageCounting(global_imageCount, pixelsW, pixelsH, "test");
             saveImageCounting(global_imageCount, d_width, d_height, "test");
             printf("saved image %d\n", global_imageCount);
@@ -257,6 +257,7 @@ void shaderUpdate(GLFWwindow* window)
 
 void init_byte_array(unsigned char* arr, int size, unsigned char initVal)
 {
+    //попроьбовать memset
     for (int i = 0; i < size; i++)
     {
         arr[i] = initVal;
@@ -266,6 +267,7 @@ void init_byte_array(unsigned char* arr, int size, unsigned char initVal)
 //Копирует значения из одного массива в другой. Массивы должны иметь одинковый размер
 void copy_byte_array(const unsigned char* arrGiver, unsigned char* arrTaker, int size)
 {
+    //попробовать memcpy
     for (int i = 0; i < size; i++)
     {
         arrTaker[i] = arrGiver[i];
@@ -376,15 +378,11 @@ void setPixel(int index, pixel& pix)
     global_pixelsData[index + 2] = pix.b;
 }
 
-//Меняем пиксель по адресу index со смешиванием пикслея pix
+//Меняем пиксель по адресу index со смешиванием пикселя pix
 void blendPixel(int index, pixel& pix)
 {
     pixel pixAtIndex = getPixel(index);
-    if (pixAtIndex != white)
-    {
-        setPixel(index, pixAtIndex);
-    }
-    else
+    if (pixAtIndex == white)
     {
         setPixel(index, pix);
     }
@@ -446,15 +444,16 @@ void markPixel(int height_index, int width_index, int width)
 }
 
 //Помечаем всех соседей пикселя с координатами width_index и height_index
-void markNeighbors(int height_index, int width_index, int width)
+void markNeighbors(int height_index, int width_index, int height, int width)
 {
-    if (global_pixelsMask_previous[mat2D_getRawIndex(height_index, width_index, width)] == 0) return;
     for (int i = height_index-1; i <= height_index+1; i++)
     {
         if (i < 0) continue;
+        if (i >= height) break;
         for (int j = width_index-1; j <= width_index+1; j++)
         {
             if (j < 0) continue;
+            if (j >= width) break;
             markPixel(i, j, width);
         }
     }
@@ -492,17 +491,22 @@ void denoiseImage(int height, int width, int channels = 3)
     {
         for (int j = 0; j < width; j++)
         {
+            if (global_pixelsMask_previous[mat2D_getRawIndex(i, j, width)] == 0)
+                continue;
+
             pixelIndex = mat3D_getRawIndex(i, j, 0, width, channels);
             if (getPixel(pixelIndex) != white)
             {
-                markNeighbors(i, j, width);
+                markNeighbors(i, j, height, width);
             }
         }
     }
 
+    //Переносим информацию из маски на текущее изображение
     applyMask_to_pixelData(global_pixelsMask_curent, height, width, channels);
 
-    //Копируем текущую маску в буфер, а затем очищаем её.
+    //Копируем текущую маску в буфер, а затем очищаем её. ???
+    //Поменять функции? copy и init
     copy_byte_array(global_pixelsMask_curent, global_pixelsMask_previous, global_pixels_size);
     init_byte_array(global_pixelsMask_curent, global_pixels_size, 0);
 
