@@ -11,8 +11,11 @@
 #include <sys/stat.h>
 #include <direct.h>
 #include <iostream>
+
+//ћои заголовки
 #include "shaderHandler.h"
 #include "stopwatch.h"
+#include "ndc.h"
 
 using namespace glm;
 
@@ -22,10 +25,6 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow* window);
 void shaderUpdate(GLFWwindow* window);
 void startSession(GLFWwindow* window);
-
-vec2 NDC_oneDimsension_to_viewport(vec2 ndc, float viewportDimension);
-float NDC_to_viewport(float ndc, float viewportDimension);
-GLuint NDC_to_dimension(float firstPoint, float secondPoint, float viewportDimension);
 
 mat4 createTransformMatrix(GLuint scrW, GLuint scrH, 
     vec2 normalXBounds, vec2 normalYBounds);
@@ -52,10 +51,10 @@ int global_imageCount = 0;
 GLfloat movingPoint_epsilon = 0.01f;
 GLfloat noiseProbability = 0.01f;
 
-GLsizei pixelsW = NDC_to_dimension(-0.5f, 0.5f, SCR_WIDTH) / 2;
-GLsizei pixelsH = NDC_to_dimension(-0.5f, 0.5f, SCR_HEIGHT) / 2;
-GLuint pixelsX = NDC_to_viewport(-0.5f, SCR_WIDTH);
-GLuint pixelsY = NDC_to_viewport(-0.5f, SCR_HEIGHT);
+GLsizei pixelsW = NDC::to_dimension(-0.5f, 0.5f, SCR_WIDTH) / 2;
+GLsizei pixelsH = NDC::to_dimension(-0.5f, 0.5f, SCR_HEIGHT) / 2;
+GLuint pixelsX = NDC::to_viewport(-0.5f, SCR_WIDTH);
+GLuint pixelsY = NDC::to_viewport(-0.5f, SCR_HEIGHT);
 
 const int global_pixels_channels = 3;
 const int global_pixels_size = pixelsW * pixelsH;
@@ -197,7 +196,7 @@ int main()
 
         if (window_watch.ticked())
         {
-            int d_width = 320, d_height = pixelsH; //изначально 160
+            int d_width = 160, d_height = 160; //изначально 160
             //saveImageCounting(global_imageCount, pixelsW, pixelsH, "test");
             saveImageCounting(global_imageCount, d_width, d_height, "test");
             printf("saved image %d\n", global_imageCount);
@@ -487,6 +486,16 @@ void denoiseImage(int height, int width, int channels = 3)
 
     //printSymbolPixels(global_pixelsData, 3, width, height);
 
+    //1. - строим карту чЄрных пикселей. 1 = черный пиксель, 0 = белый пиксель.
+    //2. - умножаем карту чЄрных пикселей на карту областей. ѕолучаем карту чЄрных пикселей, наход€щихс€ в пределах движени€
+    //3. - чертим новую карту областей на основе текущей карты пикселей, оказавшихс€ в пределах движени€
+
+    //2. - возможно ли осуществить битовой операцией?
+
+    //—начала отмететь все белые пиксели, затем наложить на маску?
+
+    //Ќаписать нормальные классы дл€ работы с большими указател€ми пикселей
+
     for (int i = 0; i < height; i++)
     {
         for (int j = 0; j < width; j++)
@@ -537,35 +546,11 @@ void printPixels(const unsigned char* pixels, int channels, GLsizei width, GLsiz
     //printf("done\n");
 }
 
-//Normalized Device Coordinate to viewport coordinate
-float NDC_to_viewport(float ndc, float viewportDimension)
-{
-    return (ndc + 1.0f) / 2.0f * float(viewportDimension);
-}
-
-//Normalized Device Coordinates of two dimensions (x and y) to viewport coordinates
-vec2 NDC_twoDimsension_to_viewport(vec2 ndc, float viewportWidth, float viewportHeight)
-{
-    return vec2(NDC_to_viewport(ndc.x, viewportWidth), NDC_to_viewport(ndc.y, viewportHeight));
-}
-
-//Normalized Device Coordinates of one dimension (x or y) to viewport coordinates
-vec2 NDC_oneDimsension_to_viewport(vec2 ndc, float viewportDimension)
-{
-    return NDC_twoDimsension_to_viewport(ndc, viewportDimension, viewportDimension);
-}
-
-//Returns dimension value between two Normalized Device Coordinates of one dimension
-GLuint NDC_to_dimension(float firstPoint, float secondPoint, float viewportDimension)
-{
-    return NDC_to_viewport(secondPoint - firstPoint, viewportDimension);
-}
-
 mat4 createTransformMatrix(GLuint scrW, GLuint scrH,
     vec2 normalXBounds, vec2 normalYBounds)
 {
-    vec2 xb = NDC_oneDimsension_to_viewport(normalXBounds, scrW);
-    vec2 yb = NDC_oneDimsension_to_viewport(normalYBounds, scrH);
+    vec2 xb = NDC::oneDimsension_to_viewport(normalXBounds, scrW);
+    vec2 yb = NDC::oneDimsension_to_viewport(normalYBounds, scrH);
 
     float lamb1 = scrW / (xb[1] - xb[0]);
     float lamb2 = scrH / (yb[1] - yb[0]);
