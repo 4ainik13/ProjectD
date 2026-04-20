@@ -146,6 +146,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\..\..\..\..\OpenGL\src\glad.c" />
+    <ClCompile Include="my_debug.cpp" />
     <ClCompile Include="ndc.cpp" />
     <ClCompile Include="Source.cpp" />
   </ItemGroup>
@@ -154,9 +155,13 @@
     <None Include="default.vert" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="my_debug.h" />
     <ClInclude Include="EBO.h" />
+    <ClInclude Include="matrix.h" />
     <ClInclude Include="ndc.h" />
-    <ClInclude Include="pixels.h" />
+    <ClInclude Include="pixel.h" />
+    <ClInclude Include="pixels_handler.h" />
+    <ClInclude Include="pixels_data.h" />
     <ClInclude Include="shaderHandler.h" />
     <ClInclude Include="stb_image_write.h" />
     <ClInclude Include="stopwatch.h" />

@@ -1,14 +1,13 @@
 #pragma once
 #include <glad/glad.h>
-#include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-using namespace glm;
-
 //NDC = Normalized Device Coordinate, Нормализованная координата устройства
 //Viewport - это отображаемое при запуске программы окно
+
+using namespace glm;
 
 namespace NDC
 {
@@ -25,7 +24,6 @@ namespace NDC
 	//viewportSize - размер осей окна, вдоль которых мы хотим найти координаты нку в координатах viewport
 	vec2 oneDimsension_to_viewport(vec2 ndcs, float viewportSize);
 
-	//Returns dimension value between two Normalized Device Coordinates of one dimension
 	//Возвращает расстояние между двмуя нормализованными координатами.
 	//Расстояние возвращается в формате viewport.
 	//Координаты должны принадлежать одной координатной оси.

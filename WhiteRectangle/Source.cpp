@@ -16,6 +16,7 @@
 #include "shaderHandler.h"
 #include "stopwatch.h"
 #include "ndc.h"
+#include "my_debug.h"
 
 using namespace glm;
 
@@ -40,9 +41,16 @@ void denoiseImage(int height, int width, int channels);
 void printAddress(const char* varName, const char* funcName, void* addresToPrint);
 void init_byte_array(unsigned char* arr, int size, unsigned char initVal);
 
+namespace TST
+{
+    void saveCurrentImage(GLsizei width, GLsizei height, std::string name);
+    void saveImageCounting(int& imageCounter, GLsizei width, GLsizei height, std::string name);
+}
+
 //Переменные
 const GLuint SCR_WIDTH = 800;
 const GLuint SCR_HEIGHT = 600;
+const GLuint CLR_CHANNELS = 3;
 
 GLuint global_shaderProgram = 0;
 bool global_sessionStarted = false;
@@ -51,7 +59,7 @@ int global_imageCount = 0;
 GLfloat movingPoint_epsilon = 0.01f;
 GLfloat noiseProbability = 0.01f;
 
-GLsizei pixelsW = NDC::to_dimension(-0.5f, 0.5f, SCR_WIDTH) / 2;
+GLsizei pixelsW = NDC::to_dimension(-0.5f, 0.5f, SCR_WIDTH) / 2; //БАГ в to_dimension. Почему-то получается в 2 раза больше. Поэтому здесь делим на 2
 GLsizei pixelsH = NDC::to_dimension(-0.5f, 0.5f, SCR_HEIGHT) / 2;
 GLuint pixelsX = NDC::to_viewport(-0.5f, SCR_WIDTH);
 GLuint pixelsY = NDC::to_viewport(-0.5f, SCR_HEIGHT);
@@ -62,6 +70,8 @@ const int global_pixels_size = pixelsW * pixelsH;
 unsigned char* global_pixelsData = new unsigned char[global_pixels_size * global_pixels_channels]{};
 unsigned char* global_pixelsMask_previous = new unsigned char[global_pixels_size]{};
 unsigned char* global_pixelsMask_curent = new unsigned char[global_pixels_size] {};
+
+GLuint global_pbos[2] = { 0, 0 };
 
 float vertices[] = {
      0.5f,  0.5f, 0.0f,  // top right
@@ -130,8 +140,13 @@ int main()
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    //glEnableVertexAttribArray(0); можно выполнять и после того, как мы разметили
+    //данные атрибута (потому что он включается на vao?). 
+    //Но для здравого смысла будем включать соответсвующий
+    //атрибут перед тем как разметить соответсвующие ему данные, а не после.
     glEnableVertexAttribArray(0);
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
 
     //3. Создаём ebo
     GLuint ebo;
@@ -181,7 +196,19 @@ int main()
     //Задаём цвет очистки (заливки) окна
     glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 
+    glUseProgram(shaderProgram);
+    glBindVertexArray(vao);
+
     //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
+    //8.5 PBO
+    int pbo_size = SCR_HEIGHT * SCR_WIDTH * CLR_CHANNELS;
+    glGenBuffers(2, global_pbos);
+    glBindBuffer(GL_PIXEL_PACK_BUFFER, global_pbos[0]);
+    glBufferData(GL_PIXEL_PACK_BUFFER, pbo_size, 0, GL_STREAM_READ);
+    glBindBuffer(GL_PIXEL_PACK_BUFFER, global_pbos[1]);
+    glBufferData(GL_PIXEL_PACK_BUFFER, pbo_size, 0, GL_STREAM_READ);
+
     //9. Рендер
     while (!glfwWindowShouldClose(window))
     {
@@ -190,18 +217,17 @@ int main()
 
         glClear(GL_COLOR_BUFFER_BIT); //Очищаем буфер окна (задаём одноцветный фон)
 
-        glUseProgram(shaderProgram);
-        glBindVertexArray(vao);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
         if (window_watch.ticked())
         {
             int d_width = 160, d_height = 160; //изначально 160
-            //saveImageCounting(global_imageCount, pixelsW, pixelsH, "test");
-            saveImageCounting(global_imageCount, d_width, d_height, "test");
+            //saveImageCounting(global_imageCount, d_width, d_height, "test");
+            //glBindVertexArray(0);
+            TST::saveImageCounting(global_imageCount, d_width, d_height, "pboTest");
             printf("saved image %d\n", global_imageCount);
             //printSymbolPixels(global_pixelsData, 3, d_width, d_height);
-            denoiseImage(d_height, d_width, 3);
+            //denoiseImage(d_height, d_width, 3);
             //denoiseImage(pixelsH, pixelsW, 3);
         }
 
@@ -211,12 +237,12 @@ int main()
         glfwPollEvents(); //Обрабатываем все произошедшие события. Вызываем связанные callback-функции
 
     }
-
     
     //10. Освобождаем ресурсы
     glDeleteVertexArrays(1, &vao);
     glDeleteBuffers(1, &vbo);
     glDeleteBuffers(1, &ebo);
+    glDeleteBuffers(2, global_pbos);
     glDeleteProgram(shaderProgram);
 
     glfwTerminate();
@@ -578,4 +604,49 @@ void printAddress(const char* varName, const char* funcName, void* addresToPrint
 {
     //printf(varName + " in " funcName + " : %p", addresToPrint);
     printf("%s in %s: %p\n", varName, funcName, addresToPrint);
+}
+
+namespace TST
+{
+    unsigned int index = 0;
+    unsigned int nextIndex = 0;
+
+    //Сохраняем текущий кадр в формате bmp на компьютере. 
+    //global_pixelsData указывает на последний записанный кадр в чистом формате.
+    void saveCurrentImage(GLsizei width, GLsizei height, std::string name = "test")
+    {
+        unsigned char channels = 3;
+
+        index = (index + 1) % 2;
+        nextIndex = (index + 1) % 2;
+
+        glBindBuffer(GL_PIXEL_PACK_BUFFER, global_pbos[index]);
+        glReadPixels(pixelsX, pixelsY, width, height, GL_RGB, GL_UNSIGNED_BYTE, (void*)0);
+
+        glBindBuffer(GL_PIXEL_PACK_BUFFER, global_pbos[nextIndex]);
+        GLubyte* pbo_ptr = (GLubyte*)glMapBuffer(GL_PIXEL_PACK_BUFFER, GL_READ_ONLY);
+
+        if (pbo_ptr)
+        {
+            std::string directory = "images\\";
+            std::string filename = directory + name + ".bmp";
+
+            summonDir(directory);
+
+            stbi_flip_vertically_on_write(1);
+            stbi_write_bmp(filename.c_str(), width, height, channels, pbo_ptr);
+
+            glUnmapBuffer(GL_PIXEL_PACK_BUFFER);
+        }
+
+        glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
+    }
+
+    //Сохраняем текущий кадр в формате bmp с подсчётом сохранённых кадров.
+    //Полученный кадр будт иметь имя в формате nameX.bmp, где X - номер кадра
+    void saveImageCounting(int& imageCounter, GLsizei width, GLsizei height, std::string name = "test")
+    {
+        imageCounter++;
+        saveCurrentImage(width, height, name + std::to_string(imageCounter));
+    }
 }

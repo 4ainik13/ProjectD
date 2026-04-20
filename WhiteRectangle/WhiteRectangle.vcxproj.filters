@@ -24,6 +24,9 @@
     <ClCompile Include="ndc.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="my_debug.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="default.frag" />
@@ -48,10 +51,22 @@
     <ClInclude Include="shaderHandler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="pixels.h">
+    <ClInclude Include="pixels_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="ndc.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="pixels_data.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="pixel.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="matrix.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="my_debug.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

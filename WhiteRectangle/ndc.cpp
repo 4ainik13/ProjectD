@@ -1,5 +1,7 @@
 #include "ndc.h"
 
+using namespace glm;
+
 namespace NDC
 {
     //Normalized Device Coordinate to viewport coordinate
