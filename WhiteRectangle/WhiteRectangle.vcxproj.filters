@@ -69,5 +69,8 @@
     <ClInclude Include="my_debug.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="image_handler.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

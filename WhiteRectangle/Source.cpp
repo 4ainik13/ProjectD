@@ -6,7 +6,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-#define STB_IMAGE_WRITE_IMPLEMENTATION
+//#define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
 #include <sys/stat.h>
 #include <direct.h>
@@ -17,9 +17,9 @@
 #include "stopwatch.h"
 #include "ndc.h"
 #include "my_debug.h"
+#include "image_handler.h"
 
 using namespace glm;
-
 
 //Функции
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
@@ -41,11 +41,6 @@ void denoiseImage(int height, int width, int channels);
 void printAddress(const char* varName, const char* funcName, void* addresToPrint);
 void init_byte_array(unsigned char* arr, int size, unsigned char initVal);
 
-namespace TST
-{
-    void saveCurrentImage(GLsizei width, GLsizei height, std::string name);
-    void saveImageCounting(int& imageCounter, GLsizei width, GLsizei height, std::string name);
-}
 
 //Переменные
 const GLuint SCR_WIDTH = 800;
@@ -70,8 +65,6 @@ const int global_pixels_size = pixelsW * pixelsH;
 unsigned char* global_pixelsData = new unsigned char[global_pixels_size * global_pixels_channels]{};
 unsigned char* global_pixelsMask_previous = new unsigned char[global_pixels_size]{};
 unsigned char* global_pixelsMask_curent = new unsigned char[global_pixels_size] {};
-
-GLuint global_pbos[2] = { 0, 0 };
 
 float vertices[] = {
      0.5f,  0.5f, 0.0f,  // top right
@@ -186,6 +179,8 @@ int main()
 
 
     //8. Подготовка к рендеру
+    ImageHandler imageHandler(SCR_WIDTH * SCR_HEIGHT * CLR_CHANNELS);
+
     //25 миллисекунд по 16 раз
     window_watch.set(0.025, 16);
     printAddress("window_watch", "main", &window_watch);
@@ -201,14 +196,6 @@ int main()
 
     //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
-    //8.5 PBO
-    int pbo_size = SCR_HEIGHT * SCR_WIDTH * CLR_CHANNELS;
-    glGenBuffers(2, global_pbos);
-    glBindBuffer(GL_PIXEL_PACK_BUFFER, global_pbos[0]);
-    glBufferData(GL_PIXEL_PACK_BUFFER, pbo_size, 0, GL_STREAM_READ);
-    glBindBuffer(GL_PIXEL_PACK_BUFFER, global_pbos[1]);
-    glBufferData(GL_PIXEL_PACK_BUFFER, pbo_size, 0, GL_STREAM_READ);
-
     //9. Рендер
     while (!glfwWindowShouldClose(window))
     {
@@ -222,16 +209,10 @@ int main()
         if (window_watch.ticked())
         {
             int d_width = 160, d_height = 160; //изначально 160
-            //saveImageCounting(global_imageCount, d_width, d_height, "test");
-            //glBindVertexArray(0);
-            TST::saveImageCounting(global_imageCount, d_width, d_height, "pboTest");
-            printf("saved image %d\n", global_imageCount);
-            //printSymbolPixels(global_pixelsData, 3, d_width, d_height);
+            imageHandler.saveImage_fromScreen_counting(pixelsX, pixelsY, d_height, d_width, CLR_CHANNELS, "pboTest");
+            printf("saved image %d\n", imageHandler.imageCounter);
             //denoiseImage(d_height, d_width, 3);
-            //denoiseImage(pixelsH, pixelsW, 3);
         }
-
-        //clockUpdate(window_watch);
 
         glfwSwapBuffers(window); //Меняем местами передний и задний буферы рендера окна (два больших массива цветов)
         glfwPollEvents(); //Обрабатываем все произошедшие события. Вызываем связанные callback-функции
@@ -242,7 +223,6 @@ int main()
     glDeleteVertexArrays(1, &vao);
     glDeleteBuffers(1, &vbo);
     glDeleteBuffers(1, &ebo);
-    glDeleteBuffers(2, global_pbos);
     glDeleteProgram(shaderProgram);
 
     glfwTerminate();
@@ -604,49 +584,4 @@ void printAddress(const char* varName, const char* funcName, void* addresToPrint
 {
     //printf(varName + " in " funcName + " : %p", addresToPrint);
     printf("%s in %s: %p\n", varName, funcName, addresToPrint);
-}
-
-namespace TST
-{
-    unsigned int index = 0;
-    unsigned int nextIndex = 0;
-
-    //Сохраняем текущий кадр в формате bmp на компьютере. 
-    //global_pixelsData указывает на последний записанный кадр в чистом формате.
-    void saveCurrentImage(GLsizei width, GLsizei height, std::string name = "test")
-    {
-        unsigned char channels = 3;
-
-        index = (index + 1) % 2;
-        nextIndex = (index + 1) % 2;
-
-        glBindBuffer(GL_PIXEL_PACK_BUFFER, global_pbos[index]);
-        glReadPixels(pixelsX, pixelsY, width, height, GL_RGB, GL_UNSIGNED_BYTE, (void*)0);
-
-        glBindBuffer(GL_PIXEL_PACK_BUFFER, global_pbos[nextIndex]);
-        GLubyte* pbo_ptr = (GLubyte*)glMapBuffer(GL_PIXEL_PACK_BUFFER, GL_READ_ONLY);
-
-        if (pbo_ptr)
-        {
-            std::string directory = "images\\";
-            std::string filename = directory + name + ".bmp";
-
-            summonDir(directory);
-
-            stbi_flip_vertically_on_write(1);
-            stbi_write_bmp(filename.c_str(), width, height, channels, pbo_ptr);
-
-            glUnmapBuffer(GL_PIXEL_PACK_BUFFER);
-        }
-
-        glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
-    }
-
-    //Сохраняем текущий кадр в формате bmp с подсчётом сохранённых кадров.
-    //Полученный кадр будт иметь имя в формате nameX.bmp, где X - номер кадра
-    void saveImageCounting(int& imageCounter, GLsizei width, GLsizei height, std::string name = "test")
-    {
-        imageCounter++;
-        saveCurrentImage(width, height, name + std::to_string(imageCounter));
-    }
 }

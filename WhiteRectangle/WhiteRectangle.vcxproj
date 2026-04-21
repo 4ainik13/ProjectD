@@ -155,6 +155,7 @@
     <None Include="default.vert" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="image_handler.h" />
     <ClInclude Include="my_debug.h" />
     <ClInclude Include="EBO.h" />
     <ClInclude Include="matrix.h" />
