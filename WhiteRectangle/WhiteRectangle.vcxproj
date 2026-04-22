@@ -163,6 +163,7 @@
     <ClInclude Include="pixel.h" />
     <ClInclude Include="pixels_handler.h" />
     <ClInclude Include="pixels_data.h" />
+    <ClInclude Include="pixel_buffer_object_array.h" />
     <ClInclude Include="shaderHandler.h" />
     <ClInclude Include="stb_image_write.h" />
     <ClInclude Include="stopwatch.h" />

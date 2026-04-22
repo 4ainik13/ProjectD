@@ -72,5 +72,8 @@
     <ClInclude Include="image_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="pixel_buffer_object_array.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

@@ -179,7 +179,7 @@ int main()
 
 
     //8. Подготовка к рендеру
-    ImageHandler imageHandler(SCR_WIDTH * SCR_HEIGHT * CLR_CHANNELS);
+    ImageHandler imageHandler(SCR_WIDTH * SCR_HEIGHT * CLR_CHANNELS, 2);
 
     //25 миллисекунд по 16 раз
     window_watch.set(0.025, 16);

@@ -1,6 +1,5 @@
 #pragma once
 #include <glad/glad.h>
-#include <GLFW/glfw3.h>
 #include <iostream>
 #include <string>
 
@@ -8,10 +7,7 @@
 #include "stb_image_write.h"
 #include <direct.h>
 
-namespace
-{
-    const unsigned int PBO_QUANT = 2;
-}
+#include "pixel_buffer_object_array.h"
 
 namespace dir
 {
@@ -35,20 +31,12 @@ class ImageHandler
 {
 public:
     unsigned int imageCounter;
-    unsigned int pboSize;
-    unsigned int pboIndex;
-    unsigned int pboNextIndex;
-    GLuint pboArray[PBO_QUANT];
+    PboArray pboArray;
 
-    //GLubyte* curent_pbo_ptr;
-
-    ImageHandler(unsigned int pboSize)
+    ImageHandler(unsigned int sizeOfPbos, unsigned int numberOfPbos)
     {
         this->imageCounter = 0;
-        this->pboSize = pboSize;
-        this->pboIndex = 0;
-        this->pboNextIndex = 0;
-        init_pboArray(PBO_QUANT, pboSize);
+        pboArray.init(sizeOfPbos, numberOfPbos);
     }
 
     void saveImage_fromData(const unsigned char* data,
@@ -79,13 +67,13 @@ public:
         const unsigned int& height, const unsigned int& width,
         const unsigned int& channels = 3, std::string name = "test")
     {
-        GLubyte* pbo_ptr = map_screenPixelData(startX, startY, height, width);
+        GLubyte* bufferData_ptr = pboArray.readPixels(startX, startY, height, width);
 
-        if (pbo_ptr)
+        if (bufferData_ptr)
         {
-            saveImage_fromData(pbo_ptr, height, width, channels, name);
+            saveImage_fromData(bufferData_ptr, height, width, channels, name);
 
-            glUnmapBuffer(GL_PIXEL_PACK_BUFFER);
+            pboArray.unmapBuffer();
         }
     }
 
@@ -97,57 +85,5 @@ public:
     {
         imageCounter++;
         saveImage_fromScreen(startX, startY, height, width, 3, name + std::to_string(imageCounter));
-    }
-
-private:
-    //Генерируем pbo и задаём их размер
-    void init_pboArray(const unsigned int& pbo_quant, const unsigned int& pbo_size)
-    {
-        glGenBuffers(pbo_quant, pboArray);
-        for (unsigned int i = 0; i < pbo_quant; i++)
-        {
-            glBindBuffer(GL_PIXEL_PACK_BUFFER, pboArray[i]);
-            glBufferData(GL_PIXEL_PACK_BUFFER, pbo_size, 0, GL_STREAM_READ);
-        }
-    }
-
-    //Возвращаем указатель на данные пикселей с экрана.
-    GLubyte* map_screenPixelData(const int& startX, const int& startY,
-        const unsigned int& height, const unsigned int& width)
-    {
-        //Меням индексы pbo местами, чтобы считывать из ранее 
-        //записанного pbo и записывать в ранее считанный
-        pbo_iterateIndex();
-
-        //Считываем пиксели с экрана в буфер пикселей GL_PIXEL_PACK_BUFFER
-        pbo_readPixels(startX, startY, width, height, pboIndex);
-
-        //Получаем указатель на данные с экрана, считанные в прошлом цикле
-        return pbo_mapBuffer(pboNextIndex);
-    }
-
-    void pbo_iterateIndex()
-    {
-        pboIndex = (pboIndex + 1) % 2;
-        pboNextIndex = (pboIndex + 1) % 2;
-    }
-
-    void pbo_readPixels(const int& startX, const int& startY,
-        const unsigned int& height, const unsigned int& width,
-        const unsigned int& pboArrayIndex)
-    {
-        glBindBuffer(GL_PIXEL_PACK_BUFFER, pboArray[pboArrayIndex]);
-        glReadPixels(startX, startY, width, height, GL_RGB, GL_UNSIGNED_BYTE, (void*)0);
-    }
-
-    GLubyte* pbo_mapBuffer(const unsigned int& pboArrayIndex)
-    {
-        glBindBuffer(GL_PIXEL_PACK_BUFFER, pboArray[pboArrayIndex]);
-        return (GLubyte*)glMapBuffer(GL_PIXEL_PACK_BUFFER, GL_READ_ONLY);
-    }
-
-    void pbo_unmapBuffer()
-    {
-
     }
 };
