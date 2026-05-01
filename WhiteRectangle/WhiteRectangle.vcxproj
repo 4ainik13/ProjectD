@@ -146,20 +146,28 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\..\..\..\..\OpenGL\src\glad.c" />
+    <ClCompile Include="denoise_alg.cpp" />
+    <ClCompile Include="matrix.cpp" />
     <ClCompile Include="my_debug.cpp" />
     <ClCompile Include="ndc.cpp" />
+    <ClCompile Include="pbo_tex.cpp" />
     <ClCompile Include="Source.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="default.frag" />
     <None Include="default.vert" />
+    <None Include="pboTex.frag" />
+    <None Include="pboTex.vert" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="denoise_alg.h" />
+    <ClInclude Include="global_vars.h" />
     <ClInclude Include="image_handler.h" />
     <ClInclude Include="my_debug.h" />
     <ClInclude Include="EBO.h" />
     <ClInclude Include="matrix.h" />
     <ClInclude Include="ndc.h" />
+    <ClInclude Include="pbo_tex.h" />
     <ClInclude Include="pixel.h" />
     <ClInclude Include="pixels_handler.h" />
     <ClInclude Include="pixels_data.h" />

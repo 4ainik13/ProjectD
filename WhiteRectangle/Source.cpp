@@ -6,8 +6,6 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-//#define STB_IMAGE_WRITE_IMPLEMENTATION
-#include "stb_image_write.h"
 #include <sys/stat.h>
 #include <direct.h>
 #include <iostream>
@@ -16,10 +14,15 @@
 #include "shaderHandler.h"
 #include "stopwatch.h"
 #include "ndc.h"
+#include "matrix.h"
 #include "my_debug.h"
 #include "image_handler.h"
+#include "denoise_alg.h"
+#include "pbo_tex.h"
+#include "global_vars.h"
 
 using namespace glm;
+using namespace global;
 
 //Функции
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
@@ -31,21 +34,8 @@ mat4 createTransformMatrix(GLuint scrW, GLuint scrH,
     vec2 normalXBounds, vec2 normalYBounds);
 
 void printPixels(const unsigned char* pixels, int channels, GLsizei width, GLsizei height);
-void printSymbolPixels(const unsigned char* pixels, int channels, GLsizei width, GLsizei height);
-
-void saveCurrentImage(GLsizei width, GLsizei height, std::string name);
-void saveImageCounting(int& imageCounter, GLsizei width, GLsizei height, std::string name);
-void saveImage_fromData(const unsigned char* data, int width, int height, std::string name, int channels);
-void denoiseImage(int height, int width, int channels);
 
 void printAddress(const char* varName, const char* funcName, void* addresToPrint);
-void init_byte_array(unsigned char* arr, int size, unsigned char initVal);
-
-
-//Переменные
-const GLuint SCR_WIDTH = 800;
-const GLuint SCR_HEIGHT = 600;
-const GLuint CLR_CHANNELS = 3;
 
 GLuint global_shaderProgram = 0;
 bool global_sessionStarted = false;
@@ -62,7 +52,6 @@ GLuint pixelsY = NDC::to_viewport(-0.5f, SCR_HEIGHT);
 const int global_pixels_channels = 3;
 const int global_pixels_size = pixelsW * pixelsH;
 
-unsigned char* global_pixelsData = new unsigned char[global_pixels_size * global_pixels_channels]{};
 unsigned char* global_pixelsMask_previous = new unsigned char[global_pixels_size]{};
 unsigned char* global_pixelsMask_curent = new unsigned char[global_pixels_size] {};
 
@@ -156,11 +145,16 @@ int main()
     global_shaderProgram = shaderProgram;
     glUseProgram(shaderProgram);
 
+    //6.5. Создаём второй набор буферов и шейдеров для отрисовки pbo
+    tex::createShaderProgram();
+    tex::genVertBuffers();
+    tex::genTexBuffer();
+
     //7. Подготовка шейдерных переменных
     vec2 res = vec2(SCR_WIDTH, SCR_HEIGHT);
     mat4 trans = createTransformMatrix(SCR_WIDTH, SCR_HEIGHT, vec2(-0.5f, 0.5f), vec2(-0.5f, 0.5f));
     
-    movingPoint_epsilon = 0.005f;
+    movingPoint_epsilon = 0.0025f; //0.005
     noiseProbability = 0.05f;
 
     GLint u_resLoc = glGetUniformLocation(shaderProgram, "u_res");
@@ -185,9 +179,6 @@ int main()
     window_watch.set(0.025, 16);
     printAddress("window_watch", "main", &window_watch);
 
-    init_byte_array(global_pixelsMask_previous, global_pixels_size, 1);
-    init_byte_array(global_pixelsMask_curent, global_pixels_size, 0);
-
     //Задаём цвет очистки (заливки) окна
     glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 
@@ -204,14 +195,20 @@ int main()
 
         glClear(GL_COLOR_BUFFER_BIT); //Очищаем буфер окна (задаём одноцветный фон)
 
+        glUseProgram(shaderProgram);
+        glBindVertexArray(vao);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+
+        tex::drawElements();
 
         if (window_watch.ticked())
         {
-            int d_width = 160, d_height = 160; //изначально 160
-            imageHandler.saveImage_fromScreen_counting(pixelsX, pixelsY, d_height, d_width, CLR_CHANNELS, "pboTest");
+            //Артефакаты при [201-275] + pbo
+            int d_width = BMP_WIDTH, d_height = BMP_HEIGHT; //изначально 160
+            //imageHandler.saveImage_fromScreen_counting(pixelsX, pixelsY, d_height, d_width, CLR_CHANNELS, "pboTest");
+            imageHandler.saveImage_differentWays(pixelsX, pixelsY, d_height, d_width, CLR_CHANNELS, "pboTest");
             printf("saved image %d\n", imageHandler.imageCounter);
-            //denoiseImage(d_height, d_width, 3);
+            //denoiseImage(d_height, d_width, 3, imageHandler);
         }
 
         glfwSwapBuffers(window); //Меняем местами передний и задний буферы рендера окна (два больших массива цветов)
@@ -260,25 +257,6 @@ void shaderUpdate(GLFWwindow* window)
     }
 }
 
-void init_byte_array(unsigned char* arr, int size, unsigned char initVal)
-{
-    //попроьбовать memset
-    for (int i = 0; i < size; i++)
-    {
-        arr[i] = initVal;
-    }
-}
-
-//Копирует значения из одного массива в другой. Массивы должны иметь одинковый размер
-void copy_byte_array(const unsigned char* arrGiver, unsigned char* arrTaker, int size)
-{
-    //попробовать memcpy
-    for (int i = 0; i < size; i++)
-    {
-        arrTaker[i] = arrGiver[i];
-    }
-}
-
 void startSession(GLFWwindow* window)
 {
     if (global_sessionStarted == false)
@@ -293,243 +271,6 @@ void startSession(GLFWwindow* window)
     }
 }
 
-//Сохраняем содержимое data на компьютере
-void saveImage_fromData(const unsigned char* data, int height, int width, std::string name = "testFromData", int channels = 3)
-{
-    std::string filename = "images\\" + name + ".bmp";
-    stbi_flip_vertically_on_write(1);
-    stbi_write_bmp(filename.c_str(), width, height, channels, data);
-}
-
-void saveImage_fromData_counting(const unsigned char* data, int& imageCount, int height, int width, std::string name = "testFromData", int channels = 3, bool increment = true)
-{
-    if(increment) imageCount++;
-    name = name + std::to_string(imageCount);
-    saveImage_fromData(data, height, width, name);
-}
-
-bool dir_exists(const std::string& dir)
-{
-    struct stat buffer;
-    return (stat(dir.c_str(), &buffer) == 0);
-}
-
-void summonDir(const std::string& dir)
-{
-    if (!dir_exists(dir))
-    {
-        int res = _mkdir(dir.c_str());
-        if (res != 0) std::cout << "Directory have failed to be summoned";
-    }
-}
-
-//Сохраняем текущий кадр в формате bmp на компьютере. 
-//global_pixelsData указывает на последний записанный кадр в чистом формате.
-void saveCurrentImage(GLsizei width, GLsizei height, std::string name = "test")
-{
-    unsigned char channels = 3;
-
-    glReadPixels(pixelsX, pixelsY, width, height, GL_RGB, GL_UNSIGNED_BYTE, global_pixelsData);
-
-    std::string directory = "images\\";
-    std::string filename = directory + name + ".bmp";
-
-    summonDir(directory);
-
-    stbi_flip_vertically_on_write(1);
-    stbi_write_bmp(filename.c_str(), width, height, channels, global_pixelsData);
-}
-
-//Сохраняем текущий кадр в формате bmp с подсчётом сохранённых кадров.
-//Полученный кадр будт иметь имя в формате nameX.bmp, где X - номер кадра
-void saveImageCounting(int& imageCounter, GLsizei width, GLsizei height, std::string name = "test")
-{
-    imageCounter++;
-    saveCurrentImage(width, height, name + std::to_string(imageCounter));
-}
-
-struct pixel
-{
-    unsigned char r, g, b;
-};
-const pixel red{ 255, 0, 0 }, black{ 0, 0, 0 }, white{ 255, 255, 255 };
-
-bool operator == (const pixel& p1, const pixel& p2)
-{
-    return p1.r == p2.r && p1.g == p2.g && p1.b == p2.b;
-}
-
-bool operator != (const pixel& p1, const pixel& p2)
-{
-    return p1.r != p2.r || p1.g != p2.g || p1.b != p2.b;
-}
-
-//Возвращает пиксель из массива global_pixelData по указанному индексу
-pixel getPixel(int index)
-{
-    return pixel{
-        global_pixelsData[index],
-        global_pixelsData[index+1], 
-        global_pixelsData[index+2]
-    };
-}
-
-//Задаёт указанный пиксель pix в трёхмерном массиве global_pixelData по индексу index.
-//Сам index должен быть представлен как абсолютный индекс массива global_pixelData, указываюший на 0-ой элемент, относящийся к цвету
-void setPixel(int index, pixel& pix)
-{
-    global_pixelsData[index] = pix.r;
-    global_pixelsData[index + 1] = pix.g;
-    global_pixelsData[index + 2] = pix.b;
-}
-
-//Меняем пиксель по адресу index со смешиванием пикселя pix
-void blendPixel(int index, pixel& pix)
-{
-    pixel pixAtIndex = getPixel(index);
-    if (pixAtIndex == white)
-    {
-        setPixel(index, pix);
-    }
-}
-
-
-//Возвращает символьное представление пикселя (если оно задано)
-char appraisePixel(const pixel& pix)
-{
-    if (pix == red) return 'R';
-    if (pix == black) return '#';
-    if (pix == white) return '.';
-}
-
-//Возвращает абсолютный индекс для трёхмерного массива по трём координатам first_index, second_index и third_index.
-//Массив имеет размер first_dimension X second_dimension X third_dimension
-int mat3D_getRawIndex(
-    int first_index, int second_index, int third_index,
-    int second_dimension, int third_dimension)
-{
-    return first_index * second_dimension * third_dimension + second_index * third_dimension + third_index;
-}
-
-//Возвращает абсолютный индекс для двухмерного массива по двум координатам first_index и second_index.
-//Массив имеет размер first_dimension X second_dimension
-int mat2D_getRawIndex(
-    int first_index, int second_index,
-    int second_dimension)
-{
-    return first_index * second_dimension + second_index;
-}
-
-//Отладочная функция.
-//Выводит на консоль данные из массива пикселей в символьном виде
-void printSymbolPixels(const unsigned char* pixels, int channels, GLsizei width, GLsizei height)
-{
-    unsigned char colorChars[4] = { 'R', 'G', 'B', 'A' };
-    pixel pix{};
-
-    for (GLsizei i = height-1; i >= 0; i--)
-    {
-        for (GLsizei j = 0; j < width; j++)
-        {
-            //pix = getPixel(i * width * channels + j * channels);
-            pix = getPixel(mat3D_getRawIndex(i, j, 0, width, channels));
-            printf("%c ", appraisePixel(pix));
-        }
-        printf("\n");
-    }
-
-    //printf("done\n");
-}
-
-//Помечаем пиксель по координатам width_index и height_index
-void markPixel(int height_index, int width_index, int width)
-{
-    int rawIndex = mat2D_getRawIndex(height_index, width_index, width);
-    global_pixelsMask_curent[rawIndex] = 1;
-}
-
-//Помечаем всех соседей пикселя с координатами width_index и height_index
-void markNeighbors(int height_index, int width_index, int height, int width)
-{
-    for (int i = height_index-1; i <= height_index+1; i++)
-    {
-        if (i < 0) continue;
-        if (i >= height) break;
-        for (int j = width_index-1; j <= width_index+1; j++)
-        {
-            if (j < 0) continue;
-            if (j >= width) break;
-            markPixel(i, j, width);
-        }
-    }
-}
-
-void applyMask_to_pixelData(const unsigned char* mask, int height, int width, int channels = 3)
-{
-    pixel pix{ 0, 255, 0 };
-    int maskIndex;
-    int pixelIndex;
-    unsigned char maskVal;
-
-    for (int i = 0; i < height; i++)
-    {
-        for (int j = 0; j < width; j++)
-        {
-            maskIndex = mat2D_getRawIndex(i, j, width);
-            maskVal = global_pixelsMask_curent[maskIndex];
-            if (maskVal == 1)
-            {
-                pixelIndex = mat3D_getRawIndex(i, j, 0, width, channels);
-                blendPixel(pixelIndex, pix);
-            }
-        }
-    }
-}
-
-void denoiseImage(int height, int width, int channels = 3)
-{
-    int pixelIndex;
-
-    //printSymbolPixels(global_pixelsData, 3, width, height);
-
-    //1. - строим карту чёрных пикселей. 1 = черный пиксель, 0 = белый пиксель.
-    //2. - умножаем карту чёрных пикселей на карту областей. Получаем карту чёрных пикселей, находящихся в пределах движения
-    //3. - чертим новую карту областей на основе текущей карты пикселей, оказавшихся в пределах движения
-
-    //2. - возможно ли осуществить битовой операцией?
-
-    //Сначала отмететь все белые пиксели, затем наложить на маску?
-
-    //Написать нормальные классы для работы с большими указателями пикселей
-
-    for (int i = 0; i < height; i++)
-    {
-        for (int j = 0; j < width; j++)
-        {
-            if (global_pixelsMask_previous[mat2D_getRawIndex(i, j, width)] == 0)
-                continue;
-
-            pixelIndex = mat3D_getRawIndex(i, j, 0, width, channels);
-            if (getPixel(pixelIndex) != white)
-            {
-                markNeighbors(i, j, height, width);
-            }
-        }
-    }
-
-    //Переносим информацию из маски на текущее изображение
-    applyMask_to_pixelData(global_pixelsMask_curent, height, width, channels);
-
-    //Копируем текущую маску в буфер, а затем очищаем её. ???
-    //Поменять функции? copy и init
-    copy_byte_array(global_pixelsMask_curent, global_pixelsMask_previous, global_pixels_size);
-    init_byte_array(global_pixelsMask_curent, global_pixels_size, 0);
-
-    saveImage_fromData_counting(
-        global_pixelsData, global_imageCount, height, width, "denoise", 3, false
-    );
-}
-
 //Отладочная функция.
 //Выводит на консоль данные из массива пикселей в необработанном виде
 void printPixels(const unsigned char* pixels, int channels, GLsizei width, GLsizei height)
@@ -542,7 +283,7 @@ void printPixels(const unsigned char* pixels, int channels, GLsizei width, GLsiz
         {
             for (int k = 0; k < channels; k++)
             {
-                printf("%c: %d ", colorChars[k], pixels[mat3D_getRawIndex(i, j, k, width, channels)]);
+                printf("%c: %d ", colorChars[k], pixels[mat3D::getRawIndex(i, j, k, width, channels)]);
             }
             printf("\n");
         }

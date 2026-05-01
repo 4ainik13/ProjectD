@@ -27,10 +27,21 @@
     <ClCompile Include="my_debug.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="denoise_alg.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="matrix.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="pbo_tex.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="default.frag" />
     <None Include="default.vert" />
+    <None Include="pboTex.frag" />
+    <None Include="pboTex.vert" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="EBO.h">
@@ -73,6 +84,15 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="pixel_buffer_object_array.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="denoise_alg.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="pbo_tex.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="global_vars.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

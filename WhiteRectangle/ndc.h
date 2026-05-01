@@ -15,6 +15,15 @@ namespace NDC
 	//viewportSize - размер оси окна, вдоль которой мы хотим найти нку в координатах viewport
 	float to_viewport(float ndc, float viewportSize);
 
+	//Превращаем координату viewport в нку.
+	//viewportSize - размер оси окна, вдоль которой мы хотим найти нку в координатах viewport
+	float to_ndc(float vpc, float viewportSize);
+
+	//Превращаем координату viewport в единицу измерения, 
+	// которая, при сложении с нку, перемещает нку вдоль своей оси.
+	//viewportSize - размер оси окна, вдоль которой мы хотим найти нку в координатах viewport
+	float to_add(float vpc, float viewportSize);
+
 	//Превращем две нормализованные координаты устройства (x и y) в соответсвующие координаты viewport.
 	//Viewport имеет разные длину и ширину.
 	vec2 twoDimsension_to_viewport(vec2 ndcs, float viewportWidth, float viewportHeight);
@@ -28,5 +37,6 @@ namespace NDC
 	//Расстояние возвращается в формате viewport.
 	//Координаты должны принадлежать одной координатной оси.
 	//viewportSize - размер оси окна, вдоль которой мы хотим найти расстояние между двумя нку в формате viewport
+	//БАГ! Почему-то получается в 2 раза больше
 	GLuint to_dimension(float firstCoord, float secondCoord, float viewportSize);
 }

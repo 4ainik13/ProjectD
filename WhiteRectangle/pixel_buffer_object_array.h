@@ -45,6 +45,11 @@ public:
 		return (GLubyte*)glMapBuffer(GL_PIXEL_PACK_BUFFER, GL_READ_ONLY);
 	}
 
+	GLubyte* mapBuffer_curent()
+	{
+		return mapBuffer(nextIndex);
+	}
+
 	void unmapBuffer()
 	{
 		glUnmapBuffer(GL_PIXEL_PACK_BUFFER);

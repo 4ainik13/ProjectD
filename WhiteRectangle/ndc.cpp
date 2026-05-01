@@ -7,7 +7,17 @@ namespace NDC
     //Normalized Device Coordinate to viewport coordinate
     float to_viewport(float ndc, float viewportSize)
     {
-        return (ndc + 1.0f) / 2.0f * float(viewportSize);
+        return (ndc + 1.0f) / 2.0f * viewportSize;
+    }
+
+    float to_ndc(float vpc, float viewportSize)
+    {
+        return 2.0f * vpc / viewportSize - 1.0f;
+    }
+
+    float to_add(float vpc, float viewportSize)
+    {
+        return 2.0f * vpc / viewportSize;
     }
 
     //Normalized Device Coordinates of two dimensions (x and y) to viewport coordinates

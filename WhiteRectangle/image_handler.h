@@ -8,6 +8,7 @@
 #include <direct.h>
 
 #include "pixel_buffer_object_array.h"
+#include "denoise_alg.h"
 
 namespace dir
 {
@@ -33,10 +34,47 @@ public:
     unsigned int imageCounter;
     PboArray pboArray;
 
+    ImageHandler()
+    {
+        this->imageCounter = 0;
+    }
+
     ImageHandler(unsigned int sizeOfPbos, unsigned int numberOfPbos)
     {
         this->imageCounter = 0;
         pboArray.init(sizeOfPbos, numberOfPbos);
+    }
+
+    unsigned char* mapPixelDataPointer()
+    {
+        return pboArray.mapBuffer_curent();
+    }
+
+    void unmapPixelDataPointer()
+    {
+        pboArray.unmapBuffer();
+    }
+
+    //Сохраняем картинку из pbo несколькими способами.
+    //После выполнения функции, данные 
+    //изображения, которое хранится в pbo, могут измениться.
+    void saveImage_differentWays(const int& startX, const int& startY,
+        const unsigned int& height, const unsigned int& width,
+        const unsigned int& channels = 3, std::string name = "test")
+    {
+        GLubyte* bufferData_ptr = pboArray.readPixels(startX, startY, height, width);
+
+        if (bufferData_ptr)
+        {
+            countImage();
+            name = nameCount(name);
+
+            saveImage_fromData(bufferData_ptr, height, width, channels, name);
+            denoiseImage_fromData(bufferData_ptr, height, width, channels, "denoise" + name);
+            
+
+            pboArray.unmapBuffer();
+        }
     }
 
     void saveImage_fromData(const unsigned char* data,
@@ -57,7 +95,7 @@ public:
         const int channels = 3, std::string name = "testFromData",
         bool increment = true)
     {
-        if (increment) imageCounter++;
+        countImage(increment);
         saveImage_fromData(data, height, width, channels, name + std::to_string(imageCounter));
     }
 
@@ -83,7 +121,25 @@ public:
         const unsigned int& height, const unsigned int& width,
         const unsigned int& channels = 3, std::string name = "test")
     {
-        imageCounter++;
+        countImage();
         saveImage_fromScreen(startX, startY, height, width, 3, name + std::to_string(imageCounter));
+    }
+
+    void denoiseImage_fromData(unsigned char* data,
+        const unsigned int& height, const unsigned int& width,
+        const int channels = 3, std::string name = "denoiseFromData")
+    {
+        alg::denoiseImage(data, height, width, channels);
+        saveImage_fromData(data, height, width, channels, name);
+    }
+private:
+    void countImage(bool increment = true)
+    {
+        if (increment) imageCounter++;
+    }
+
+    std::string nameCount(std::string& name)
+    {
+        return name + std::to_string(imageCounter);
     }
 };

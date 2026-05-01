@@ -6,10 +6,7 @@ namespace mat3D
     //Массив имеет размер first_dimension X second_dimension X third_dimension
     int getRawIndex(
         int first_index, int second_index, int third_index,
-        int second_dimension, int third_dimension)
-    {
-        return first_index * second_dimension * third_dimension + second_index * third_dimension + third_index;
-    }
+        int second_dimension, int third_dimension);
 }
 
 namespace mat2D
@@ -18,8 +15,5 @@ namespace mat2D
     //Массив имеет размер first_dimension X second_dimension
     int getRawIndex(
         int first_index, int second_index,
-        int second_dimension)
-    {
-        return first_index * second_dimension + second_index;
-    }
+        int second_dimension);
 }
