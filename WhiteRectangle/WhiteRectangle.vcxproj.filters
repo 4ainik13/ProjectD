@@ -36,6 +36,9 @@
     <ClCompile Include="pbo_tex.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="global_vars.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="default.frag" />
@@ -93,6 +96,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="global_vars.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="latex.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -20,6 +20,7 @@
 #include "denoise_alg.h"
 #include "pbo_tex.h"
 #include "global_vars.h"
+#include "latex.h"
 
 using namespace glm;
 using namespace global;
@@ -41,13 +42,17 @@ GLuint global_shaderProgram = 0;
 bool global_sessionStarted = false;
 int global_imageCount = 0;
 
-GLfloat movingPoint_epsilon = 0.01f;
-GLfloat noiseProbability = 0.01f;
+ImageHandler imageHandler;
 
-GLsizei pixelsW = NDC::to_dimension(-0.5f, 0.5f, SCR_WIDTH) / 2; //БАГ в to_dimension. Почему-то получается в 2 раза больше. Поэтому здесь делим на 2
-GLsizei pixelsH = NDC::to_dimension(-0.5f, 0.5f, SCR_HEIGHT) / 2;
-GLuint pixelsX = NDC::to_viewport(-0.5f, SCR_WIDTH);
-GLuint pixelsY = NDC::to_viewport(-0.5f, SCR_HEIGHT);
+GLfloat noiseProbability;
+GLint noiseSeed;
+vec2 a_vec;
+vec2 b_vec;
+
+GLsizei pixelsW = FRAME_WIDTH;
+GLsizei pixelsH = FRAME_HEIGHT;
+GLuint pixelsX = FRAME_X;
+GLuint pixelsY = FRAME_Y;
 
 const int global_pixels_channels = 3;
 const int global_pixels_size = pixelsW * pixelsH;
@@ -153,30 +158,40 @@ int main()
     //7. Подготовка шейдерных переменных
     vec2 res = vec2(SCR_WIDTH, SCR_HEIGHT);
     mat4 trans = createTransformMatrix(SCR_WIDTH, SCR_HEIGHT, vec2(-0.5f, 0.5f), vec2(-0.5f, 0.5f));
-    
-    movingPoint_epsilon = 0.0025f; //0.005
-    noiseProbability = 0.05f;
+    a_vec = vec2(5.f, 5.f);
+    b_vec = vec2(0.f, 0.f);
+
+    noiseProbability = 0.16f; //0.05f
+    srand(time(0));
+    noiseSeed = rand();
 
     GLint u_resLoc = glGetUniformLocation(shaderProgram, "u_res");
     GLint u_timeLoc = glGetUniformLocation(shaderProgram, "u_time");
     GLint u_transformLoc = glGetUniformLocation(shaderProgram, "u_transform");
-    GLint u_epsLoc = glGetUniformLocation(shaderProgram, "u_eps");
     GLint u_noiseProbLoc = glGetUniformLocation(shaderProgram, "u_noiseProb");
+    GLint u_seedLoc = glGetUniformLocation(shaderProgram, "u_seed");
+    GLint u_aLoc = glGetUniformLocation(shaderProgram, "u_a");
+    GLint u_bLoc = glGetUniformLocation(shaderProgram, "u_b");
 
     //2fv => один вектор из двух float
     //count = 1 => один вектор из двух float
     glUniform2fv(u_resLoc, 1, glm::value_ptr(res));
     glUniformMatrix4fv(u_transformLoc, 1, GL_FALSE, glm::value_ptr(trans));
     glUniform1f(u_timeLoc, glfwGetTime());
-    glUniform1f(u_epsLoc, movingPoint_epsilon);
     glUniform1f(u_noiseProbLoc, noiseProbability);
+    glUniform1i(u_seedLoc, noiseSeed);
+    glUniform2fv(u_aLoc, 1, glm::value_ptr(a_vec));
+    glUniform2fv(u_bLoc, 1, glm::value_ptr(b_vec));
 
 
     //8. Подготовка к рендеру
-    ImageHandler imageHandler(SCR_WIDTH * SCR_HEIGHT * CLR_CHANNELS, 2);
+    imageHandler = ImageHandler(SCR_WIDTH * SCR_HEIGHT * CLR_CHANNELS, 2);
+    Latex latex;
+    int experiment = 0;
 
     //25 миллисекунд по 16 раз
-    window_watch.set(0.025, 16);
+    int ticks = 6000;
+    window_watch.set(0.025, ticks);
     printAddress("window_watch", "main", &window_watch);
 
     //Задаём цвет очистки (заливки) окна
@@ -199,28 +214,58 @@ int main()
         glBindVertexArray(vao);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
-        tex::drawElements();
+        //tex::drawElements();
 
-        if (window_watch.ticked())
+        if (window_watch.ticked() && minNoiseCount > 1)
         {
+            // !!! ДОБАВИТЬ window_watch.stop(); !!!
             //Артефакаты при [201-275] + pbo
             int d_width = BMP_WIDTH, d_height = BMP_HEIGHT; //изначально 160
             //imageHandler.saveImage_fromScreen_counting(pixelsX, pixelsY, d_height, d_width, CLR_CHANNELS, "pboTest");
-            imageHandler.saveImage_differentWays(pixelsX, pixelsY, d_height, d_width, CLR_CHANNELS, "pboTest");
-            printf("saved image %d\n", imageHandler.imageCounter);
+            imageHandler.saveImage_differentWays(pixelsX, pixelsY, d_height, d_width, CLR_CHANNELS, "pboTest", false);
+            printf("saved image %d\t", imageHandler.imageCounter);
+            printf("noise count: %d\t", noiseCount);
+            printf("min noise: %d\t", minNoiseCount);
+            printf("best image: %d\t", bestImage);
+            printf("experiment: %d\n", experiment+1);
+            latex.parse(noiseCount, experiment, imageHandler.imageCounter-1);
             //denoiseImage(d_height, d_width, 3, imageHandler);
         }
 
         glfwSwapBuffers(window); //Меняем местами передний и задний буферы рендера окна (два больших массива цветов)
         glfwPollEvents(); //Обрабатываем все произошедшие события. Вызываем связанные callback-функции
 
+        if (window_watch.noTicks() || minNoiseCount <= 1)
+        {
+            //перезапускаем всё это дело
+            //!!! Отменить инициализацию в denoise_alg !!!
+            experiment++;
+
+            imageHandler.imageCounter = 0;
+            noiseCount = 0;
+            minNoiseCount = INT_MAX;
+            bestImage = 0;
+            alg::initMasks();
+
+            glfwSetTime(0);
+
+            srand(0);
+            glUniform1i(u_seedLoc, rand());
+
+            window_watch.setStart(0.025, ticks);
+        }
+        //if (window_watch.noTicks() || minNoiseCount <= 1) experiment++;
+        if (experiment > 9) glfwSetWindowShouldClose(window, true);
     }
     
+    latex.writeTable(a_vec, b_vec, noiseProbability);
+
     //10. Освобождаем ресурсы
     glDeleteVertexArrays(1, &vao);
     glDeleteBuffers(1, &vbo);
     glDeleteBuffers(1, &ebo);
     glDeleteProgram(shaderProgram);
+    tex::freeResources();
 
     glfwTerminate();
 	return 0;
@@ -257,14 +302,24 @@ void shaderUpdate(GLFWwindow* window)
     }
 }
 
+void printBasisInf()
+{
+    printf("a vector = (%.3f, %.3f)\t", a_vec.x, a_vec.y);
+    printf("b vector = (%.3f, %.3f)\t", b_vec.x, b_vec.y);
+    printf("P = %.3f\n", noiseProbability);
+}
+
 void startSession(GLFWwindow* window)
 {
     if (global_sessionStarted == false)
     {
+        printBasisInf();
+
         global_sessionStarted = true;
 
         glfwSetTime(0);
 
+        imageHandler.initialPixelsRead(pixelsX, pixelsY, BMP_HEIGHT, BMP_WIDTH);
         Stopwatch* window_watch = (Stopwatch*)glfwGetWindowUserPointer(window);
         printAddress("window_watch", "startSession", window_watch);
         window_watch->start();

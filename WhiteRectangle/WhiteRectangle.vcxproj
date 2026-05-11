@@ -147,6 +147,7 @@
   <ItemGroup>
     <ClCompile Include="..\..\..\..\..\..\..\OpenGL\src\glad.c" />
     <ClCompile Include="denoise_alg.cpp" />
+    <ClCompile Include="global_vars.cpp" />
     <ClCompile Include="matrix.cpp" />
     <ClCompile Include="my_debug.cpp" />
     <ClCompile Include="ndc.cpp" />
@@ -163,6 +164,7 @@
     <ClInclude Include="denoise_alg.h" />
     <ClInclude Include="global_vars.h" />
     <ClInclude Include="image_handler.h" />
+    <ClInclude Include="latex.h" />
     <ClInclude Include="my_debug.h" />
     <ClInclude Include="EBO.h" />
     <ClInclude Include="matrix.h" />

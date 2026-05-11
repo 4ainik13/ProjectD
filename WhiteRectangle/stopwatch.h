@@ -6,6 +6,12 @@ class Stopwatch
 public:
 	double tickInterval = 1;
 
+	//Возвращаем количество оставшихся тиков
+	int getTicksLeft()
+	{
+		return ticksLeft;
+	}
+
 	//Задаём длину одного тика в секундах и количество тиков
 	void set(double tickInterval, int tickLimit = 8)
 	{
@@ -31,7 +37,7 @@ public:
 	bool ticked()
 	{
 		if (!started) return false;
-		if (ticksLeft <= 0) return false;
+		if (noTicks()) return false;
 
 		double curentTime = glfwGetTime();
 		if (curentTime - lastTickTime >= tickInterval)
@@ -41,6 +47,12 @@ public:
 			return true;
 		}
 		return false;
+	}
+
+	//Проверяем, кончились ли уже тики
+	bool noTicks()
+	{
+		return ticksLeft <= 0;
 	}
 
 private:

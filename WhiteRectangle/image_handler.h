@@ -9,6 +9,7 @@
 
 #include "pixel_buffer_object_array.h"
 #include "denoise_alg.h"
+#include "global_vars.h"
 
 namespace dir
 {
@@ -55,12 +56,20 @@ public:
         pboArray.unmapBuffer();
     }
 
+    //Читаем пиксели с экрана впервый раз, чтобы заполнить пустой pbo.
+    void initialPixelsRead(const int& startX, const int& startY,
+        const unsigned int& height, const unsigned int& width)
+    {
+        GLubyte* bufferData_ptr = pboArray.readPixels(startX, startY, height, width);
+        if(bufferData_ptr) pboArray.unmapBuffer();
+    }
+
     //Сохраняем картинку из pbo несколькими способами.
     //После выполнения функции, данные 
     //изображения, которое хранится в pbo, могут измениться.
     void saveImage_differentWays(const int& startX, const int& startY,
         const unsigned int& height, const unsigned int& width,
-        const unsigned int& channels = 3, std::string name = "test")
+        const unsigned int& channels = 3, std::string name = "test", bool doSave = true)
     {
         GLubyte* bufferData_ptr = pboArray.readPixels(startX, startY, height, width);
 
@@ -69,8 +78,8 @@ public:
             countImage();
             name = nameCount(name);
 
-            saveImage_fromData(bufferData_ptr, height, width, channels, name);
-            denoiseImage_fromData(bufferData_ptr, height, width, channels, "denoise" + name);
+            saveImage_fromData(bufferData_ptr, height, width, channels, name, doSave);
+            denoiseImage_fromData(bufferData_ptr, height, width, channels, "denoise" + name, doSave);
             
 
             pboArray.unmapBuffer();
@@ -79,8 +88,10 @@ public:
 
     void saveImage_fromData(const unsigned char* data,
         const unsigned int& height, const unsigned int& width,
-        const int channels = 3, std::string name = "testFromData")
+        const int channels = 3, std::string name = "testFromData", bool doSave = true)
     {
+        if (!doSave) return;
+
         std::string directory = "images\\";
         std::string filename = directory + name + ".bmp";
 
@@ -93,10 +104,10 @@ public:
     void saveImage_fromData_counting(const unsigned char* data,
         const unsigned int& height, const unsigned int& width,
         const int channels = 3, std::string name = "testFromData",
-        bool increment = true)
+        bool increment = true, bool doSave = true)
     {
         countImage(increment);
-        saveImage_fromData(data, height, width, channels, name + std::to_string(imageCounter));
+        saveImage_fromData(data, height, width, channels, name + std::to_string(imageCounter), doSave);
     }
 
     //Сохраняем текущий кадр в формате bmp на компьютере.
@@ -127,15 +138,19 @@ public:
 
     void denoiseImage_fromData(unsigned char* data,
         const unsigned int& height, const unsigned int& width,
-        const int channels = 3, std::string name = "denoiseFromData")
+        const int channels = 3, std::string name = "denoiseFromData", bool doSave = true)
     {
         alg::denoiseImage(data, height, width, channels);
-        saveImage_fromData(data, height, width, channels, name);
+        saveImage_fromData(data, height, width, channels, name, doSave);
     }
 private:
     void countImage(bool increment = true)
     {
-        if (increment) imageCounter++;
+        if (increment)
+        {
+            global::currentImage = imageCounter;
+            imageCounter++;
+        }
     }
 
     std::string nameCount(std::string& name)

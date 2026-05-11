@@ -7,4 +7,5 @@ namespace tex
 	void genTexBuffer();
 	void genVertBuffers();
 	void drawElements();
+	void freeResources();
 }

@@ -1,6 +1,7 @@
 #include "matrix.h"
 #include "ndc.h"
 #include "denoise_alg.h"
+#include "global_vars.h"
 
 namespace
 {
@@ -45,13 +46,6 @@ namespace
         std::memcpy(arrTaker, arrGiver, size);
     }
 
-    void initMasks()
-    {
-        init_byte_array(global_pixelsMask_previous, global_pixels_size, 1);
-        init_byte_array(global_pixelsMask_curent, global_pixels_size, 0);
-        masksAreInited = true;
-    }
-
     //Возвращает пиксель из массива data по указанному индексу
     pixel getPixel(const unsigned char* data, int index)
     {
@@ -81,7 +75,7 @@ namespace
         }
     }
 
-    //Помечаем пиксель по координатам width_index и height_index
+    //Помечаем пиксель по координатам width_index и height_index в маске при помощи 1
     void markPixel(int height_index, int width_index, int width)
     {
         int rawIndex = mat2D::getRawIndex(height_index, width_index, width);
@@ -104,6 +98,7 @@ namespace
         }
     }
 
+    //Накладываем маску на картинку, которая хранится в data
     void applyMask_to_pixelData(unsigned char* data, const unsigned char* mask, int height, int width, int channels)
     {
         pixel pix{ 0, 255, 0 };
@@ -115,11 +110,15 @@ namespace
         {
             for (int j = 0; j < width; j++)
             {
+                //Получаем индекс точки (i,j) в маске
                 maskIndex = mat2D::getRawIndex(i, j, width);
+                //Получаем значение из маски
                 maskVal = global_pixelsMask_curent[maskIndex];
                 if (maskVal == 1)
                 {
+                    //Получаем индекс точки (i,j) в массиве изображения data
                     pixelIndex = mat3D::getRawIndex(i, j, 0, width, channels);
+                    //Расскрашиваем пиксель точки (i,j) в зелённый цвет
                     blendPixel(data, pixelIndex, pix);
                 }
             }
@@ -129,9 +128,18 @@ namespace
 
 namespace alg
 {
+    //Инициализируем маски
+    void initMasks()
+    {
+        init_byte_array(global_pixelsMask_previous, global_pixels_size, 1);
+        init_byte_array(global_pixelsMask_curent, global_pixels_size, 0);
+        masksAreInited = true;
+    }
+
     void denoiseImage(unsigned char* data, int height, int width, int channels)
     {
         int pixelIndex;
+        global::noiseCount = 0;
 
         if (!masksAreInited) initMasks();
 
@@ -139,23 +147,39 @@ namespace alg
         {
             for (int j = 0; j < width; j++)
             {
+                //Если точка (i,j) не находится в области возможного движения, 
+                //пропускаем иттерацию
                 if (global_pixelsMask_previous[mat2D::getRawIndex(i, j, width)] == 0)
                     continue;
 
+                //До этого момента мы доходим только в том случае, 
+                //если точка лежит в области возможного движения
+
+                //Индекс точки (i, j) в массиве data (трёхмерный массив изображения)
                 pixelIndex = mat3D::getRawIndex(i, j, 0, width, channels);
+                //Проверяем, имеет ли цвет пиксель по полученному индексу
                 if (getPixel(data, pixelIndex) != white)
                 {
+                    //Глобальная переменная. Считаем +1 к помехам
+                    global::noiseCount++;
+                    //Помечаем 9 прилежащих пикселей, как область возможного движения
                     markNeighbors(i, j, height, width);
                 }
             }
         }
 
+        if (global::noiseCount < global::minNoiseCount)
+        {
+            global::minNoiseCount = global::noiseCount;
+            global::bestImage = global::currentImage;
+        }
+
         //Переносим информацию из маски на текущее изображение
         applyMask_to_pixelData(data, global_pixelsMask_curent, height, width, channels);
 
-        //Копируем текущую маску в буфер, а затем очищаем её. ???
-        //Поменять функции? copy и init
+        //Запоминаем текущую маску в качестве предыдущей
         copy_byte_array(global_pixelsMask_curent, global_pixelsMask_previous, global_pixels_size);
+        //Заполняем текущую маску нулями
         init_byte_array(global_pixelsMask_curent, global_pixels_size, 0);
     }
 }
