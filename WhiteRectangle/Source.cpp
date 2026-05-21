@@ -21,6 +21,7 @@
 #include "pbo_tex.h"
 #include "global_vars.h"
 #include "latex.h"
+#include "statistics.h"
 
 using namespace glm;
 using namespace global;
@@ -29,6 +30,7 @@ using namespace global;
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow* window);
 void shaderUpdate(GLFWwindow* window);
+void statisticsUpdate(Statistics& stat, const bool& readInitialPixels, const int& row, const int& col, const double& val);
 void startSession(GLFWwindow* window);
 
 mat4 createTransformMatrix(GLuint scrW, GLuint scrH, 
@@ -42,13 +44,21 @@ GLuint global_shaderProgram = 0;
 bool global_sessionStarted = false;
 int global_imageCount = 0;
 
+//Общие переменные
 ImageHandler imageHandler;
+int experiment;
+int maxExperiment;
+time_t randSeed;
+time_t randSeedMod = 1779000000;
+Stopwatch fpsWatch;
 
+//uniform переменные
 GLfloat noiseProbability;
 GLint noiseSeed;
 vec2 a_vec;
 vec2 b_vec;
 
+//Полный размер кадра (не окна)
 GLsizei pixelsW = FRAME_WIDTH;
 GLsizei pixelsH = FRAME_HEIGHT;
 GLuint pixelsX = FRAME_X;
@@ -161,8 +171,10 @@ int main()
     a_vec = vec2(5.f, 5.f);
     b_vec = vec2(0.f, 0.f);
 
-    noiseProbability = 0.16f; //0.05f
-    srand(time(0));
+    noiseProbability = 0.11f; //0.05f
+
+    randSeed = time(0) % randSeedMod;
+    srand(randSeed);
     noiseSeed = rand();
 
     GLint u_resLoc = glGetUniformLocation(shaderProgram, "u_res");
@@ -186,12 +198,21 @@ int main()
 
     //8. Подготовка к рендеру
     imageHandler = ImageHandler(SCR_WIDTH * SCR_HEIGHT * CLR_CHANNELS, 2);
-    Latex latex;
-    int experiment = 0;
+    bool readInitialPixels = false;
 
-    //25 миллисекунд по 16 раз
+    Latex<int> latex;
+    Latex<double> frameTable = Latex<double>(1, 10);
+
+    experiment = 0;
+    maxExperiment = 9; // 9 для десяти экспериментов
+
+    double fps = 0;
+    Statistics statist;
+    statist.initRows(maxExperiment+1);
+
     int ticks = 6000;
-    window_watch.set(0.025, ticks);
+    double delay = 0; //0.025 = 25 миллисекунд
+    window_watch.set(delay, ticks); //0.025
     printAddress("window_watch", "main", &window_watch);
 
     //Задаём цвет очистки (заливки) окна
@@ -203,8 +224,12 @@ int main()
     //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
     //9. Рендер
+    latex.parseSeed(randSeed, experiment);
     while (!glfwWindowShouldClose(window))
     {
+        fps = 1 / fpsWatch.lap();
+        statisticsUpdate(statist, readInitialPixels, experiment, imageHandler.imageCounter - 1, fps);
+
         processInput(window);
         shaderUpdate(window);
 
@@ -216,20 +241,25 @@ int main()
 
         //tex::drawElements();
 
+        if (readInitialPixels)
+        {
+            readInitialPixels = false;
+            imageHandler.initialPixelsRead(pixelsX, pixelsY, BMP_HEIGHT, BMP_WIDTH);
+        }
+
         if (window_watch.ticked() && minNoiseCount > 1)
         {
             // !!! ДОБАВИТЬ window_watch.stop(); !!!
             //Артефакаты при [201-275] + pbo
             int d_width = BMP_WIDTH, d_height = BMP_HEIGHT; //изначально 160
-            //imageHandler.saveImage_fromScreen_counting(pixelsX, pixelsY, d_height, d_width, CLR_CHANNELS, "pboTest");
-            imageHandler.saveImage_differentWays(pixelsX, pixelsY, d_height, d_width, CLR_CHANNELS, "pboTest", false);
+            imageHandler.saveImage_differentWays(pixelsX, pixelsY, d_height, d_width, CLR_CHANNELS, "pboTest"+to_string(experiment)+"_", false);
             printf("saved image %d\t", imageHandler.imageCounter);
             printf("noise count: %d\t", noiseCount);
             printf("min noise: %d\t", minNoiseCount);
             printf("best image: %d\t", bestImage);
-            printf("experiment: %d\n", experiment+1);
+            printf("experiment: %d\t", experiment+1);
+            printf("fps: %.2f\n", fps);
             latex.parse(noiseCount, experiment, imageHandler.imageCounter-1);
-            //denoiseImage(d_height, d_width, 3, imageHandler);
         }
 
         glfwSwapBuffers(window); //Меняем местами передний и задний буферы рендера окна (два больших массива цветов)
@@ -242,23 +272,34 @@ int main()
             experiment++;
 
             imageHandler.imageCounter = 0;
-            noiseCount = 0;
-            minNoiseCount = INT_MAX;
-            bestImage = 0;
+            readInitialPixels = true;
+
+            global::noiseCount = 0;
+            global::minNoiseCount = INT_MAX;
+            global::bestImage = 0;
+            global::currentImage = 0;
+
             alg::initMasks();
 
+            double fpsCorrectionTime = fpsWatch.lap();
             glfwSetTime(0);
 
-            srand(0);
+            randSeed = (time(0)+experiment) % randSeedMod;
+            srand(randSeed);
             glUniform1i(u_seedLoc, rand());
 
-            window_watch.setStart(0.025, ticks);
+            latex.parseSeed(randSeed, experiment);
+
+            window_watch.setStart(delay, ticks);
+            fpsWatch.setStartTime(-fpsCorrectionTime);
         }
         //if (window_watch.noTicks() || minNoiseCount <= 1) experiment++;
-        if (experiment > 9) glfwSetWindowShouldClose(window, true);
+        if (experiment > maxExperiment) glfwSetWindowShouldClose(window, true);
     }
     
     latex.writeTable(a_vec, b_vec, noiseProbability);
+    frameTable.parseVector(statist.average(), 0);
+    frameTable.writeTabular("frameTable.txt");
 
     //10. Освобождаем ресурсы
     glDeleteVertexArrays(1, &vao);
@@ -302,6 +343,14 @@ void shaderUpdate(GLFWwindow* window)
     }
 }
 
+void statisticsUpdate(Statistics& stat, const bool& readInitialPixels, const int& row, const int& col, const double& val)
+{
+    if (global_sessionStarted && !readInitialPixels)
+    {
+        stat.parse(row, col, val);
+    }
+}
+
 void printBasisInf()
 {
     printf("a vector = (%.3f, %.3f)\t", a_vec.x, a_vec.y);
@@ -323,6 +372,7 @@ void startSession(GLFWwindow* window)
         Stopwatch* window_watch = (Stopwatch*)glfwGetWindowUserPointer(window);
         printAddress("window_watch", "startSession", window_watch);
         window_watch->start();
+        fpsWatch.start();
     }
 }
 

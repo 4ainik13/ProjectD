@@ -12,6 +12,18 @@ public:
 		return ticksLeft;
 	}
 
+	//Возвращаем время начала таймера
+	double getStartTime()
+	{
+		return startTime;
+	}
+
+	//Задаём время начала таймера
+	void setStartTime(double startTime)
+	{
+		this->startTime = startTime;
+	}
+
 	//Задаём длину одного тика в секундах и количество тиков
 	void set(double tickInterval, int tickLimit = 8)
 	{
@@ -24,6 +36,29 @@ public:
 	{
 		started = true;
 		lastTickTime = glfwGetTime();
+		startTime = lastTickTime;
+	}
+
+	//Останавливаем таймер. Возвращаем время, которое прошло со старта
+	double stop()
+	{
+		started = false;
+		elapsedTime = glfwGetTime() - startTime;
+		return elapsedTime;
+	}
+
+	//Возвращаем время, прошедшее с прошлого вызова lap() или start()
+	double lap()
+	{
+		double time = glfwGetTime();
+		elapsedTime = time - startTime;
+		startTime = time;
+
+		if(started) return elapsedTime;
+
+		started = true;
+		lastTickTime = time;
+		return -1;
 	}
 
 	//Задаём время одного тика, количество тиков и запускаем таймер
@@ -57,6 +92,8 @@ public:
 
 private:
 	double lastTickTime = 0;
+	double startTime = 0;
+	double elapsedTime = 0;
 	int ticksLeft = 0;
 	bool started = false;
 };

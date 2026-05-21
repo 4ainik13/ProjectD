@@ -26,7 +26,7 @@ float rand3(float key1, vec2 key2)
 
 float rand4(float key1, vec2 key2)
 {
-    return fract(sin(float(u_seed) / 1000.f + key1 + dot(key2, vec2(12.9898,78.233)))*43758.5453123);
+    return fract(sin(float(u_seed) / 100000.f + key1 + dot(key2, vec2(12.9898,78.233)))*43758.5453123);
 }
 
 void main()

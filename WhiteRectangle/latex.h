@@ -9,43 +9,104 @@
 #include <stdexcept>
 #include <fstream>
 #include <iostream>
+#include<cmath>
 
 using namespace std;
 using glm::vec2;
 
+template <typename T>
 class Latex
 {
 public:
+	bool USE_SEED_COLUMN = true;
+	bool USE_LAST_FRAME_COLUMN = true;
+
 	queue<string> opening;
 	stack<string> ending;
 	vector<string> core;
 
-	//rowSize
-	const int max_data_cols = 14;
-	//colSize
-	const int max_data_rows = 10;
+	//Максимальное количество колонок в таблице.
+	//Или максимальный размер ряда.
+	int max_data_cols = 14;
+	//Максимально количество рядов в таблице.
+	//Или максимальный размер колонки.
+	int max_data_rows = 10;
 
-	vector<vector<int>> data;
+	//Данные, которые будут выведены в таблицу
+	//data имеет размеры max_data_rows * max_data_cols.
+	vector<vector<T>> data;
+
+	vector<vector<string>> endingColumns;
+
+	//Количество колонок
+	//Вектор должен иметь размер max_data_cols.
 	vector<int> biggestColNumber;
-	vector<int> lastValue;
-	vector<int> smallestValue;
+	//Последнее принятое значение в ряду. Не факт, что оно было записано в data
+	//Вектор должен иметь размер max_data_cols.
+	vector<T> lastValue;
+	//Наименьшее принятое значение в ряду. Не факт, что оно было записано в data
+	//Вектор должен иметь размер max_data_cols.
+	vector<T> smallestValue;
+	//Номер колонки наименьшего принятого значения в ряду. Не факт, что оно было записано в data
+	//Вектор должен иметь размер max_data_cols.
 	vector<int> colOfSmallestValue;
 
+	//Закрывающая таблицу колонка. 
+	//Состоит из значений, которые мы хотим добавить в конец каждого ряда.
+	//Может состоять из пустых значений.
+	//Вектор должен иметь размер max_data_rows.
+	vector<string> endingColumn;
+
+	//Открывающая таблицу колонка. 
+	//Вектор должен иметь размер max_data_rows.
+	vector <string> openingColumn;
+
+	//Вектор должен иметь размер max_data_rows.
+	vector <string> seedColumn;
+
+	//Самый большой номер колонки среди всех рядов.
+	//Или самый большой размер среди всех рядов.
 	int biggestColNumberAcrossAllRows;
+
+	bool endingColumnFilled;
+	bool openingColumnFilled;
+	bool seedColumnFilled;
+
+	// !!! СДЕЛАТЬ ТАК, ЧТОБЫ ДЛЯ ОДИНАКОВЫХ СЛУЧАЕВ НЕ ВЫВОДИЛИСЬ ПОВТОРНАЯ СТРОКА СО СТОЛБИКАМИ
+	// !!! НО КОГДА ИДЁТ РАЗРЫВ - ВЫВОДИЛОСЬ
 
 	Latex()
 	{
 		biggestColNumberAcrossAllRows = 0;
 
+		endingColumn = vector<string>(max_data_rows, "");
+		openingColumn = vector<string>(max_data_rows, "");
+		seedColumn = vector<string>(max_data_rows, "");
+		endingColumnFilled = false;
+		openingColumnFilled = false;
+		seedColumnFilled = false;
+
 		biggestColNumber = vector<int>(max_data_cols, 0);
-		lastValue = vector<int>(max_data_cols, 0);
-		smallestValue = vector<int>(max_data_cols, INT_MAX);
+		lastValue = vector<T>(max_data_cols, 0);
+		smallestValue = vector<T>(max_data_cols, INT_MAX);
 		colOfSmallestValue = vector<int>(max_data_cols, 0);
-		data = vector<vector<int>>(max_data_rows, vector<int>(max_data_cols, -1));
+		data = vector<vector<T>>(max_data_rows, vector<T>(max_data_cols, -1));
 	}
 
-	//col Должен начинаться с 0
-	void parse(const int& val, const int& row, const int& col)
+	Latex(int colSize, int rowSize) : Latex()
+	{
+		max_data_rows = colSize;
+		max_data_cols = rowSize;
+	}
+
+	Latex(int colSize, int rowSize, bool useSeed, bool useLastFrame) : Latex(colSize, rowSize)
+	{
+		USE_SEED_COLUMN = useSeed;
+		USE_LAST_FRAME_COLUMN = useLastFrame;
+	}
+
+	//row и col должны начинаться с 0
+	void parse(const T& val, const int& row, const int& col)
 	{
 		if (row >= max_data_rows) return;
 
@@ -68,27 +129,61 @@ public:
 			data[row][col] = val;
 	}
 
-	void writeTable(const vec2& a_vec, const vec2& b_vec, const float& prob, const string& colType = "l", const bool& doBorder = true)
+	void parseVector(const vector<double>& inputVector, const int& row)
 	{
-		beginTable();
+		for (int i = 0; i < inputVector.size(); i++)
+		{
+			parse(inputVector[i], row, i);
+		}
+	}
+
+	void parseSeed(const time_t& seed, const int& row)
+	{
+		if (row >= max_data_rows) return;
+		if (!USE_SEED_COLUMN) return;
+		seedColumn[row] = to_string(seed);
+	}
+
+	void writeTable(const vec2& a_vec, const vec2& b_vec, const float& prob, const string& fileName = "texTable.txt", const string & colType = "l", const bool& doBorder = true)
+	{
+		if(USE_LAST_FRAME_COLUMN) fillColumn(endingColumn, biggestColNumber);
+		fillColumn(openingColumn, &openingColumnFilled);
+
+		if (USE_LAST_FRAME_COLUMN) endingColumns.push_back(endingColumn);
+		if (USE_SEED_COLUMN) endingColumns.push_back(seedColumn);
 
 		char off = 0;
 		char cou = 4;
 		string capStr =
-			"$\\vec{a} = ("+ to_string(a_vec.x).substr(off, cou) + ", " + to_string(a_vec.y).substr(off, cou) + ")\\quad \\vec{b} = (" + to_string(b_vec.x).substr(off, cou) + ", " + to_string(b_vec.y).substr(off, cou) + ")\\quad P = " + to_string(prob).substr(off, cou) + "$";
+			"$\\vec{a} = (" + to_string(a_vec.x).substr(off, cou) + ", " + to_string(a_vec.y).substr(off, cou) + ")\\quad \\vec{b} = (" + to_string(b_vec.x).substr(off, cou) + ", " + to_string(b_vec.y).substr(off, cou) + ")\\quad P = " + to_string(prob).substr(off, cou) + "$";
+		int numberOfCols = max_data_cols;
+		numberOfCols += endingColumns.size();
+		if (openingColumnFilled) numberOfCols++;
+
+		beginTable();
 		
 		openingCaption(capStr);
 		openingCentering();
-		beginTabular(max_data_cols, colType, doBorder);
+		openingSetlenghtTabcolsep();
+		beginTabular(numberOfCols, colType, doBorder);
 
-		for (int i = 0; i < max_data_rows; i++)
-		{
-			hline();
-			writeColumnRow(i, max_data_cols);
-			writeDataRow(i, max_data_cols);
-		}
+		writeData(max_data_rows, max_data_cols, 1);
 
-		writeFile();
+		writeFile(fileName);
+	}
+
+	void writeTabular(const string& fileName, const string& colType = "l", const bool& doBorder = true)
+	{
+		fillColumn(openingColumn, vector<string>{"FPS"}, & openingColumnFilled);
+
+		int numberOfCols = max_data_cols;
+		if (openingColumnFilled) numberOfCols++;
+
+		beginTabular(numberOfCols, colType, doBorder);
+
+		writeData(max_data_rows, max_data_cols, 1);
+
+		writeFile(fileName);
 	}
 
 private:
@@ -106,6 +201,11 @@ private:
 	void caption(const string& captionStr)
 	{
 		writeCore(buildCaption(captionStr), true);
+	}
+
+	void openingSetlenghtTabcolsep(const string& value = "4pt")
+	{
+		writeOpening(buildSetlengthTabcolsep(value));
 	}
 
 	void openingCentering()
@@ -128,14 +228,28 @@ private:
 		cap("table", "[!h]");
 	}
 
+	void writeData(const int& colSize, const int& rowSize, int columnRowAmount = INT_MAX)
+	{
+		for (int i = 0; i < colSize; i++)
+		{
+			hline();
+			if (columnRowAmount > 0)
+			{
+				writeColumnRow(i, rowSize);
+				columnRowAmount--;
+			}
+			writeDataRow(i, rowSize);
+		}
+	}
+
 	void writeColumnRow(const int& row, const int& rowSize)
 	{
-		writeCore(buildColumnRow(row, rowSize), true);
+		writeCore(columnRowBuffer(row, rowSize), true);
 	}
 
 	void writeDataRow(const int& row, const int& rowSize)
 	{
-		writeCore(buildDataRow(row, rowSize), true);
+		writeCore(dataRowBuffer(row, rowSize), true);
 	}
 
 	void writeFile(const string& fileName = "texTable.txt")
@@ -170,6 +284,86 @@ private:
 		out.close();
 	}
 
+	void fillColumn(vector<string>& columnToFill, const vector<int>& srcColumn, bool* flag_columnFilled = nullptr)
+	{
+		for (int i = 0; i < columnToFill.size() && i < srcColumn.size(); i++)
+		{
+			columnToFill[i] = to_string(srcColumn[i]);
+		}
+		if (flag_columnFilled) (*flag_columnFilled) = true;
+	}
+
+	void fillColumn(vector<string>& columnToFill, bool* flag_columnFilled = nullptr)
+	{
+		for (int i = 0; i < columnToFill.size(); i++)
+		{
+			columnToFill[i] = to_string(i + 1);
+		}
+		if (flag_columnFilled) (*flag_columnFilled) = true;
+	}
+
+	void fillColumn(vector<string>& columnToFill, const vector<string>& srcVector, bool* flag_columnFilled = nullptr)
+	{
+		for (int i = 0; i < columnToFill.size() && i < srcVector.size(); i++)
+		{
+			columnToFill[i] = srcVector[i];
+		}
+		if (flag_columnFilled) (*flag_columnFilled) = true;
+	}
+
+	string columnRowBuffer(const int& row, const int& rowSize)
+	{
+		string builder = "";
+		string strArr[] = { "$N_i$", "Seed"};
+
+		if (openingColumnFilled) builder.append("i & ");
+		builder.append(buildColumnRow(row, rowSize));
+		builder.append(buildPrefaceEndingColumns(strArr));
+
+		builder.append(buildRowEnd());
+
+		return builder;
+	}
+
+	string dataRowBuffer(const int& row, const int& rowSize)
+	{
+		string builder = "";
+
+		if (openingColumnFilled) builder.append(openingColumn[row] + " & ");
+		builder.append(buildDataRow(row, rowSize));
+		builder.append(buildDataEndingColumns(row));
+
+		builder.append(buildRowEnd());
+
+		return builder;
+	}
+
+	string buildDataEndingColumns(const int& row)
+	{
+		string builder = "";
+
+		for (int i = 0; i < endingColumns.size(); i++)
+		{
+			builder.append(" & ");
+			builder.append(endingColumns[i][row]);
+		}
+
+		return builder;
+	}
+
+	string buildPrefaceEndingColumns(const string* strArr)
+	{
+		string builder = "";
+
+		for (int i = 0; i < endingColumns.size(); i++)
+		{
+			builder.append(" & ");
+			builder.append(strArr[i]);
+		}
+
+		return builder;
+	}
+
 	string buildColumnRow(const int& row, const int& rowSize)
 	{
 		string builder = "";
@@ -188,8 +382,6 @@ private:
 			builder.append(buildSlicedColumnRow(rowSize, lastColNumber));
 		}
 
-		builder.append(buildRowEnd());
-
 		return builder;
 	}
 
@@ -199,7 +391,8 @@ private:
 
 		builder.append(buildColumnRowBasis(rowSize - 2));
 		builder.append(" & ... & ");
-		builder.append(to_string(lastColNumber));
+		//builder.append(to_string(lastColNumber));
+		builder.append("N");
 
 		return builder;
 	}
@@ -210,7 +403,8 @@ private:
 
 		builder.append(buildColumnRowBasis(rowSize - 4));
 		builder.append(" & ... & ");
-		builder.append(to_string(colOfSmallestValue[lastColRow]));
+		//builder.append(to_string(colOfSmallestValue[lastColRow]));
+		builder.append("Min");
 		builder.append(" & ... & ");
 		builder.append(to_string(lastColNumber));
 
@@ -246,8 +440,6 @@ private:
 		{
 			builder.append(buildSlicedDataRow(row, rowSize)) ;
 		}
-
-		builder.append(buildRowEnd());
 
 		return builder;
 	}
@@ -309,7 +501,8 @@ private:
 	{
 		if (lastColNumber + 1 >= rowSize + 1) return "";
 
-		string builder = " & ";
+		string builder = "";
+		if (lastColNumber > 0) builder.append(" & ");
 
 		for (int i = lastColNumber + 1; i < rowSize + 1; i++)
 		{
@@ -328,7 +521,7 @@ private:
 
 		for (int i = 0; i < rowSize; i++)
 		{
-			builder.append(to_string(data[row][i]));
+			builder.append(toString(data[row][i]));
 			if (i + 1 < rowSize)builder.append(" & ");
 		}
 
@@ -340,7 +533,8 @@ private:
 		if (rowOutOfBounds(row)) return "";
 		if (lastColNumber >= rowSize) return "";
 
-		string builder = " & ";
+		string builder = "";
+		if (lastColNumber > 0) builder.append(" & ");
 
 		for (int i = lastColNumber; i < rowSize; i++)
 		{
@@ -382,6 +576,12 @@ private:
 			return addendum;
 	}
 
+
+	string buildSetlengthTabcolsep(const string& value)
+	{
+		return buildSetlenght(buildTabcolsep(), value);
+	}
+
 	string buildCaption(const string& captionStr)
 	{
 		return "\\caption{" + captionStr + "}";
@@ -390,6 +590,16 @@ private:
 	string buildCentering()
 	{
 		return "\\centering";
+	}
+
+	string buildTabcolsep()
+	{
+		return "\\tabcolsep";
+	}
+
+	string buildSetlenght(const string& param, const string& value)
+	{
+		return "\\setlength" + param + "{" + value + "}";
 	}
 
 	bool rowOutOfBounds(const int& row)
@@ -450,5 +660,27 @@ private:
 			stk.push(toWrite + "\n");
 		else
 			stk.push(toWrite + " ");
+	}
+
+	string toString(const int& val, const int& precision = 2)
+	{
+		return to_string(val);
+	}
+
+	string toString(const double& val, const int& precision = 2)
+	{
+		string builder = to_string(val);
+		int dot_pos = builder.find(".");
+		if (dot_pos == string::npos) return builder;
+		if (builder.length() - 1 - dot_pos > precision)
+		{
+			float volatileNumber = stof(builder.substr(0, dot_pos + precision+1));
+			int decidingCipher = builder[dot_pos + precision + 1] - '0';
+			if (decidingCipher >= 5) volatileNumber + 1/std::pow(10.f,precision);
+			builder = to_string(volatileNumber);
+			dot_pos = builder.find(".");
+			builder = builder.substr(0, dot_pos + precision + 1);
+		}
+		return builder;
 	}
 };

@@ -5,6 +5,8 @@
 
 # Mine!
 images/
+texTable.txt
+frameTable.txt
 
 # User-specific files
 *.rsuser
