@@ -29,6 +29,7 @@ using namespace global;
 //Функции
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow* window);
+void processDisplay(GLFWwindow* window, const GLuint shaderProgram, const GLuint vao);
 void shaderUpdate(GLFWwindow* window);
 void statisticsUpdate(Statistics& stat, const bool& readInitialPixels, const int& row, const int& col, const double& val);
 void startSession(GLFWwindow* window);
@@ -46,6 +47,7 @@ int global_imageCount = 0;
 
 //Общие переменные
 ImageHandler imageHandler;
+bool readInitialPixels;
 int experiment;
 int maxExperiment;
 time_t randSeed;
@@ -81,6 +83,8 @@ unsigned int indices[] = {  // note that we start from 0!
     1, 2, 3    // second triangle
 };
 
+int seedArray[] = { 880928, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+bool useSeedArray = true;
 
 //Программа
 int main()
@@ -171,9 +175,10 @@ int main()
     a_vec = vec2(5.f, 5.f);
     b_vec = vec2(0.f, 0.f);
 
-    noiseProbability = 0.11f; //0.05f
+    noiseProbability = 0.2925f; //0.05f
 
-    randSeed = time(0) % randSeedMod;
+    if (!useSeedArray) randSeed = time(0) % randSeedMod;
+    else randSeed = seedArray[0];
     srand(randSeed);
     noiseSeed = rand();
 
@@ -198,19 +203,19 @@ int main()
 
     //8. Подготовка к рендеру
     imageHandler = ImageHandler(SCR_WIDTH * SCR_HEIGHT * CLR_CHANNELS, 2);
-    bool readInitialPixels = false;
+    readInitialPixels = false;
 
     Latex<int> latex;
     Latex<double> frameTable = Latex<double>(1, 10);
 
     experiment = 0;
-    maxExperiment = 9; // 9 для десяти экспериментов
+    maxExperiment = 0; // 9 для десяти экспериментов
 
     double fps = 0;
     Statistics statist;
     statist.initRows(maxExperiment+1);
 
-    int ticks = 6000;
+    int ticks = 10000;
     double delay = 0; //0.025 = 25 миллисекунд
     window_watch.set(delay, ticks); //0.025
     printAddress("window_watch", "main", &window_watch);
@@ -231,13 +236,7 @@ int main()
         statisticsUpdate(statist, readInitialPixels, experiment, imageHandler.imageCounter - 1, fps);
 
         processInput(window);
-        shaderUpdate(window);
-
-        glClear(GL_COLOR_BUFFER_BIT); //Очищаем буфер окна (задаём одноцветный фон)
-
-        glUseProgram(shaderProgram);
-        glBindVertexArray(vao);
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+        processDisplay(window, shaderProgram, vao);
 
         //tex::drawElements();
 
@@ -245,6 +244,7 @@ int main()
         {
             readInitialPixels = false;
             imageHandler.initialPixelsRead(pixelsX, pixelsY, BMP_HEIGHT, BMP_WIDTH);
+            processDisplay(window, shaderProgram, vao);
         }
 
         if (window_watch.ticked() && minNoiseCount > 1)
@@ -252,7 +252,8 @@ int main()
             // !!! ДОБАВИТЬ window_watch.stop(); !!!
             //Артефакаты при [201-275] + pbo
             int d_width = BMP_WIDTH, d_height = BMP_HEIGHT; //изначально 160
-            imageHandler.saveImage_differentWays(pixelsX, pixelsY, d_height, d_width, CLR_CHANNELS, "pboTest"+to_string(experiment)+"_", false);
+            bool saveImage = false;
+            imageHandler.saveImage_differentWays(pixelsX, pixelsY, d_height, d_width, CLR_CHANNELS, "pboTest"+to_string(experiment)+"_", saveImage);
             printf("saved image %d\t", imageHandler.imageCounter);
             printf("noise count: %d\t", noiseCount);
             printf("min noise: %d\t", minNoiseCount);
@@ -279,12 +280,13 @@ int main()
             global::bestImage = 0;
             global::currentImage = 0;
 
-            alg::initMasks();
+            alg::beta::initMasks();
 
             double fpsCorrectionTime = fpsWatch.lap();
             glfwSetTime(0);
 
-            randSeed = (time(0)+experiment) % randSeedMod;
+            if (!useSeedArray) randSeed = (time(0) + experiment) % randSeedMod;
+            else randSeed = seedArray[experiment];
             srand(randSeed);
             glUniform1i(u_seedLoc, rand());
 
@@ -335,6 +337,17 @@ void processInput(GLFWwindow* window)
         startSession(window);
 }
 
+void processDisplay(GLFWwindow* window, const GLuint shaderProgram, const GLuint vao)
+{
+    shaderUpdate(window);
+
+    glClear(GL_COLOR_BUFFER_BIT); //Очищаем буфер окна (задаём одноцветный фон)
+
+    glUseProgram(shaderProgram);
+    glBindVertexArray(vao);
+    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+}
+
 void shaderUpdate(GLFWwindow* window)
 {
     if (global_sessionStarted)
@@ -368,7 +381,8 @@ void startSession(GLFWwindow* window)
 
         glfwSetTime(0);
 
-        imageHandler.initialPixelsRead(pixelsX, pixelsY, BMP_HEIGHT, BMP_WIDTH);
+        //imageHandler.initialPixelsRead(pixelsX, pixelsY, BMP_HEIGHT, BMP_WIDTH);
+        readInitialPixels = true;
         Stopwatch* window_watch = (Stopwatch*)glfwGetWindowUserPointer(window);
         printAddress("window_watch", "startSession", window_watch);
         window_watch->start();

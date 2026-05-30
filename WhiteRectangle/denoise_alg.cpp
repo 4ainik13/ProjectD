@@ -136,7 +136,7 @@ namespace alg
         masksAreInited = true;
     }
 
-    void denoiseImage(unsigned char* data, int height, int width, int channels)
+    void denoiseImage(unsigned char* data, int height, int width, int channels, bool saveImage)
     {
         int pixelIndex;
         global::noiseCount = 0;

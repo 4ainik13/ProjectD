@@ -140,7 +140,7 @@ public:
         const unsigned int& height, const unsigned int& width,
         const int channels = 3, std::string name = "denoiseFromData", bool doSave = true)
     {
-        alg::denoiseImage(data, height, width, channels);
+        alg::beta::denoiseImage(data, height, width, channels, doSave);
         saveImage_fromData(data, height, width, channels, name, doSave);
     }
 private:

@@ -39,6 +39,9 @@
     <ClCompile Include="global_vars.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="denoise_alg_beta.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="default.frag" />
@@ -93,6 +96,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="statistics.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="pixel_struct.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="matrix_set.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
