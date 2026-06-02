@@ -87,6 +87,30 @@ namespace
             }
         }
     }
+
+    namespace denoise
+    {
+        //Убираем шум
+        void applyMask_to_pixelData(unsigned char* data, int height, int width, int channels)
+        {
+            int pixelIndex;
+
+            for (int i = 0; i < height; i++)
+            {
+                for (int j = 0; j < width; j++)
+                {
+                    if (curentFrameDirections.empty(j, i))
+                    {
+                        //Получаем индекс точки (i,j) в массиве изображения data
+                        pixelIndex = mat3D::getRawIndex(i, j, 0, width, channels);
+                        if (getPixel(data, pixelIndex) == white) continue;
+                        //Расскрашиваем пиксель точки (i,j) в белый цвет
+                        setPixel(data, pixelIndex, white);
+                    }
+                }
+            }
+        }
+    }
 }
 
 namespace alg
@@ -144,7 +168,7 @@ namespace alg
         }
 
         //Переносим информацию из маски на текущее изображение
-        if(saveImage) applyMask_to_pixelData(data, height, width, channels);
+        if(saveImage) denoise::applyMask_to_pixelData(data, height, width, channels);
 
         //Меняем местами предыдущую и текущую матрицы направлений 
         previousFrameDirections.swap(curentFrameDirections);

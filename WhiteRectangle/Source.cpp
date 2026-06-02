@@ -84,7 +84,7 @@ unsigned int indices[] = {  // note that we start from 0!
 };
 
 int seedArray[] = { 880928, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-bool useSeedArray = true;
+bool useSeedArray = false;
 
 //Программа
 int main()
@@ -175,7 +175,7 @@ int main()
     a_vec = vec2(5.f, 5.f);
     b_vec = vec2(0.f, 0.f);
 
-    noiseProbability = 0.2925f; //0.05f
+    noiseProbability = 0.27f; //0.05f
 
     if (!useSeedArray) randSeed = time(0) % randSeedMod;
     else randSeed = seedArray[0];
@@ -252,7 +252,7 @@ int main()
             // !!! ДОБАВИТЬ window_watch.stop(); !!!
             //Артефакаты при [201-275] + pbo
             int d_width = BMP_WIDTH, d_height = BMP_HEIGHT; //изначально 160
-            bool saveImage = false;
+            bool saveImage = true;
             imageHandler.saveImage_differentWays(pixelsX, pixelsY, d_height, d_width, CLR_CHANNELS, "pboTest"+to_string(experiment)+"_", saveImage);
             printf("saved image %d\t", imageHandler.imageCounter);
             printf("noise count: %d\t", noiseCount);
