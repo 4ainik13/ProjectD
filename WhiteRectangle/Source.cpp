@@ -48,6 +48,7 @@ int global_imageCount = 0;
 //Общие переменные
 ImageHandler imageHandler;
 bool readInitialPixels;
+bool saveImage;
 int experiment;
 int maxExperiment;
 time_t randSeed;
@@ -172,10 +173,10 @@ int main()
     //7. Подготовка шейдерных переменных
     vec2 res = vec2(SCR_WIDTH, SCR_HEIGHT);
     mat4 trans = createTransformMatrix(SCR_WIDTH, SCR_HEIGHT, vec2(-0.5f, 0.5f), vec2(-0.5f, 0.5f));
-    a_vec = vec2(5.f, 5.f);
-    b_vec = vec2(0.f, 0.f);
+    a_vec = vec2(5.f, 5.f); //5.0 5.0
+    b_vec = vec2(0.f, 0.f);   //0.0 0.0
 
-    noiseProbability = 0.27f; //0.05f
+    noiseProbability = 0.17f; //0.05f
 
     if (!useSeedArray) randSeed = time(0) % randSeedMod;
     else randSeed = seedArray[0];
@@ -209,7 +210,7 @@ int main()
     Latex<double> frameTable = Latex<double>(1, 10);
 
     experiment = 0;
-    maxExperiment = 0; // 9 для десяти экспериментов
+    maxExperiment = 9; // 9 для десяти экспериментов
 
     double fps = 0;
     Statistics statist;
@@ -230,6 +231,7 @@ int main()
 
     //9. Рендер
     latex.parseSeed(randSeed, experiment);
+    saveImage = false;
     while (!glfwWindowShouldClose(window))
     {
         fps = 1 / fpsWatch.lap();
@@ -249,10 +251,10 @@ int main()
 
         if (window_watch.ticked() && minNoiseCount > 1)
         {
-            // !!! ДОБАВИТЬ window_watch.stop(); !!!
             //Артефакаты при [201-275] + pbo
             int d_width = BMP_WIDTH, d_height = BMP_HEIGHT; //изначально 160
-            bool saveImage = true;
+            //if (imageHandler.imageCounter % 100 == 0) saveImage = true;
+            //else saveImage = false;
             imageHandler.saveImage_differentWays(pixelsX, pixelsY, d_height, d_width, CLR_CHANNELS, "pboTest"+to_string(experiment)+"_", saveImage);
             printf("saved image %d\t", imageHandler.imageCounter);
             printf("noise count: %d\t", noiseCount);
@@ -280,7 +282,7 @@ int main()
             global::bestImage = 0;
             global::currentImage = 0;
 
-            alg::beta::initMasks();
+            alg::initMasks();
 
             double fpsCorrectionTime = fpsWatch.lap();
             glfwSetTime(0);

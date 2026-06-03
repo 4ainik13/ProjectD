@@ -72,6 +72,7 @@ public:
 		uint setIndex = rawIndex(x, y, 0);
 		for (uint i = 0; i < setSize; i++)
 		{
+			if (data[setIndex + i] == val) break;
 			if (data[setIndex + i] == 0)
 			{
 				data[setIndex + i] = val;

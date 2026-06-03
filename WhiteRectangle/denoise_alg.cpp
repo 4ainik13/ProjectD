@@ -175,7 +175,7 @@ namespace alg
         }
 
         //Переносим информацию из маски на текущее изображение
-        applyMask_to_pixelData(data, global_pixelsMask_curent, height, width, channels);
+        if(saveImage) applyMask_to_pixelData(data, global_pixelsMask_curent, height, width, channels);
 
         //Запоминаем текущую маску в качестве предыдущей
         copy_byte_array(global_pixelsMask_curent, global_pixelsMask_previous, global_pixels_size);

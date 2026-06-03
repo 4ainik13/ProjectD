@@ -168,7 +168,7 @@ namespace alg
         }
 
         //Переносим информацию из маски на текущее изображение
-        if(saveImage) denoise::applyMask_to_pixelData(data, height, width, channels);
+        if(saveImage) applyMask_to_pixelData(data, height, width, channels);
 
         //Меняем местами предыдущую и текущую матрицы направлений 
         previousFrameDirections.swap(curentFrameDirections);
