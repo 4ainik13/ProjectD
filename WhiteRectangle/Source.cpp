@@ -97,7 +97,7 @@ int main()
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE); //Говорим, что используем профиль core
 
     //Создаём окно
-    GLFWwindow* window = glfwCreateWindow(800, 600, "Learn OpenGL", NULL, NULL);
+    GLFWwindow* window = glfwCreateWindow(800, 600, "ProjectD", NULL, NULL);
     
     //Инициализируем переменные, передаваемые вместе с окном
     Stopwatch window_watch = Stopwatch();
@@ -176,7 +176,7 @@ int main()
     a_vec = vec2(5.f, 5.f); //5.0 5.0
     b_vec = vec2(0.f, 0.f);   //0.0 0.0
 
-    noiseProbability = 0.17f; //0.05f
+    noiseProbability = 0.2f; //0.05f
 
     if (!useSeedArray) randSeed = time(0) % randSeedMod;
     else randSeed = seedArray[0];
@@ -210,7 +210,7 @@ int main()
     Latex<double> frameTable = Latex<double>(1, 10);
 
     experiment = 0;
-    maxExperiment = 9; // 9 для десяти экспериментов
+    maxExperiment = 0; // 9 для десяти экспериментов
 
     double fps = 0;
     Statistics statist;
@@ -255,6 +255,7 @@ int main()
             int d_width = BMP_WIDTH, d_height = BMP_HEIGHT; //изначально 160
             //if (imageHandler.imageCounter % 100 == 0) saveImage = true;
             //else saveImage = false;
+            saveImage = false;
             imageHandler.saveImage_differentWays(pixelsX, pixelsY, d_height, d_width, CLR_CHANNELS, "pboTest"+to_string(experiment)+"_", saveImage);
             printf("saved image %d\t", imageHandler.imageCounter);
             printf("noise count: %d\t", noiseCount);
@@ -282,7 +283,7 @@ int main()
             global::bestImage = 0;
             global::currentImage = 0;
 
-            alg::initMasks();
+            alg::beta::initMasks();
 
             double fpsCorrectionTime = fpsWatch.lap();
             glfwSetTime(0);

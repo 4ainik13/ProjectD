@@ -18,8 +18,8 @@ namespace global
 	const uint FRAME_X = NDC::to_viewport(-0.5f, SCR_WIDTH);
 	const uint FRAME_Y = NDC::to_viewport(-0.5f, SCR_HEIGHT);
 
-	const uint BMP_WIDTH = 200;		//Изначально 160
-	const uint BMP_HEIGHT = 200;	//Изначально 160
+	const uint BMP_WIDTH = 200;		//Изначально 160 200 400
+	const uint BMP_HEIGHT = 200;	//Изначально 160 200 300
 
 	extern uint noiseCount;
 	extern uint minNoiseCount;
