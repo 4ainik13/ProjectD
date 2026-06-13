@@ -9,21 +9,6 @@ uniform int u_seed;
 uniform vec2 u_a;
 uniform vec2 u_b;
 
-float rand(float key1, vec2 key2)
-{
-    return fract(sin(key1*1000000.f * length(key2)));
-}
-
-float rand2(float key1, vec2 key2)
-{
-    return fract(sin(key1*length(key2))*100000.0f);
-}
-
-float rand3(float key1, vec2 key2)
-{
-    return fract(sin((key2.x*key2.x+key2.y*key2.y)*10000.f));
-}
-
 float rand4(float key1, vec2 key2)
 {
     return fract(sin(float(u_seed) / 100000.f + key1 + dot(key2, vec2(12.9898,78.233)))*43758.5453123);
@@ -36,7 +21,6 @@ void main()
     float r = rand4(u_time, st);
 	//x = ax * t + bx, y = ay * t + by
 	vec2 movingPoint = u_a * u_time + u_b; //0.1 0.1
-    vec2 mask = st.xy / movingPoint.xy;
 
     if(r <= u_noiseProb)
     {
