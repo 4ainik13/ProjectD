@@ -9,8 +9,8 @@ using namespace std;
 
 namespace
 {
-    //Таблица границ для циклов в markNeighbors
-    //table[a][5], table[b][9], table[c][1] и т.д.
+    //РўР°Р±Р»РёС†Р° РіСЂР°РЅРёС† РґР»СЏ С†РёРєР»РѕРІ РІ markNeighbors
+    //table[a][5], table[b][9], table[c][1] Рё С‚.Рґ.
     int boundariesTable[4][9] =
     {    /* 1   2   3   4   5   6   7   8  9 */
     /*a*/ {-1, -1, -1, -1, -1, -1,  0,  1, 0},
@@ -19,7 +19,7 @@ namespace
     /*d*/ { 0,  1,  1, -1,  1,  1,  0,  1, 1},
     };
 
-    //int frameWidth = NDC::to_dimension(-0.5f, 0.5f, global::SCR_WIDTH) / 2; //БАГ в to_dimension. Почему-то получается в 2 раза больше. Поэтому здесь делим на 2
+    //int frameWidth = NDC::to_dimension(-0.5f, 0.5f, global::SCR_WIDTH) / 2; //Р‘РђР“ РІ to_dimension. РџРѕС‡РµРјСѓ-С‚Рѕ РїРѕР»СѓС‡Р°РµС‚СЃСЏ РІ 2 СЂР°Р·Р° Р±РѕР»СЊС€Рµ. РџРѕСЌС‚РѕРјСѓ Р·РґРµСЃСЊ РґРµР»РёРј РЅР° 2
     //int frameHeight = NDC::to_dimension(-0.5f, 0.5f, global::SCR_HEIGHT) / 2;
     int frameWidth = global::BMP_WIDTH;
     int frameHeight = global::BMP_HEIGHT;
@@ -32,13 +32,13 @@ namespace
 
     bool directionsAreInited = false;
 
-    //Помечаем направление пикселя по координатам width_index и height_index в матрице curentFrameDirections при помощи dir
+    //РџРѕРјРµС‡Р°РµРј РЅР°РїСЂР°РІР»РµРЅРёРµ РїРёРєСЃРµР»СЏ РїРѕ РєРѕРѕСЂРґРёРЅР°С‚Р°Рј width_index Рё height_index РІ РјР°С‚СЂРёС†Рµ curentFrameDirections РїСЂРё РїРѕРјРѕС‰Рё dir
     void markPixel(int height_index, int width_index, int dir)
     {
         curentFrameDirections.add(width_index, height_index, dir);
     }
 
-    //Помечаем всех соседей пикселя с координатами width_index и height_index по направлению dir
+    //РџРѕРјРµС‡Р°РµРј РІСЃРµС… СЃРѕСЃРµРґРµР№ РїРёРєСЃРµР»СЏ СЃ РєРѕРѕСЂРґРёРЅР°С‚Р°РјРё width_index Рё height_index РїРѕ РЅР°РїСЂР°РІР»РµРЅРёСЋ dir
     void markNeighbors(int height_index, int width_index, int height, int width, int dir)
     {
         if (dir == 0) return;
@@ -49,10 +49,10 @@ namespace
         c = boundariesTable[2][dir - 1];
         d = boundariesTable[3][dir - 1];
 
-        //Оставляем в исходном пикселе исходное направление
+        //РћСЃС‚Р°РІР»СЏРµРј РІ РёСЃС…РѕРґРЅРѕРј РїРёРєСЃРµР»Рµ РёСЃС…РѕРґРЅРѕРµ РЅР°РїСЂР°РІР»РµРЅРёРµ
         markPixel(height_index, width_index, dir);
 
-        //Заносим новое направление в прилежащие пиксели.
+        //Р—Р°РЅРѕСЃРёРј РЅРѕРІРѕРµ РЅР°РїСЂР°РІР»РµРЅРёРµ РІ РїСЂРёР»РµР¶Р°С‰РёРµ РїРёРєСЃРµР»Рё.
         for (int i = height_index + a; i <= height_index + b; i++)
         {
             if (i < 0) continue;
@@ -68,7 +68,7 @@ namespace
         }
     }
 
-    //Накладываем данные из матрицы направлений текущего кадра на изображение data
+    //РќР°РєР»Р°РґС‹РІР°РµРј РґР°РЅРЅС‹Рµ РёР· РјР°С‚СЂРёС†С‹ РЅР°РїСЂР°РІР»РµРЅРёР№ С‚РµРєСѓС‰РµРіРѕ РєР°РґСЂР° РЅР° РёР·РѕР±СЂР°Р¶РµРЅРёРµ data
     void applyMask_to_pixelData(unsigned char* data, int height, int width, int channels)
     {
         int pixelIndex;
@@ -79,9 +79,9 @@ namespace
             {
                 if (!curentFrameDirections.empty(j, i))
                 {
-                    //Получаем индекс точки (i,j) в массиве изображения data
+                    //РџРѕР»СѓС‡Р°РµРј РёРЅРґРµРєСЃ С‚РѕС‡РєРё (i,j) РІ РјР°СЃСЃРёРІРµ РёР·РѕР±СЂР°Р¶РµРЅРёСЏ data
                     pixelIndex = mat3D::getRawIndex(i, j, 0, width, channels);
-                    //Расскрашиваем пиксель точки (i,j) в зелённый цвет
+                    //Р Р°СЃСЃРєСЂР°С€РёРІР°РµРј РїРёРєСЃРµР»СЊ С‚РѕС‡РєРё (i,j) РІ Р·РµР»С‘РЅРЅС‹Р№ С†РІРµС‚
                     colorPixel(data, pixelIndex, green);
                 }
             }
@@ -90,7 +90,7 @@ namespace
 
     namespace denoise
     {
-        //Убираем шум
+        //РЈР±РёСЂР°РµРј С€СѓРј
         void applyMask_to_pixelData(unsigned char* data, int height, int width, int channels)
         {
             int pixelIndex;
@@ -101,10 +101,10 @@ namespace
                 {
                     if (curentFrameDirections.empty(j, i))
                     {
-                        //Получаем индекс точки (i,j) в массиве изображения data
+                        //РџРѕР»СѓС‡Р°РµРј РёРЅРґРµРєСЃ С‚РѕС‡РєРё (i,j) РІ РјР°СЃСЃРёРІРµ РёР·РѕР±СЂР°Р¶РµРЅРёСЏ data
                         pixelIndex = mat3D::getRawIndex(i, j, 0, width, channels);
                         if (getPixel(data, pixelIndex) == white) continue;
-                        //Расскрашиваем пиксель точки (i,j) в белый цвет
+                        //Р Р°СЃСЃРєСЂР°С€РёРІР°РµРј РїРёРєСЃРµР»СЊ С‚РѕС‡РєРё (i,j) РІ Р±РµР»С‹Р№ С†РІРµС‚
                         setPixel(data, pixelIndex, white);
                     }
                 }
@@ -115,7 +115,7 @@ namespace
 
 namespace alg
 {
-    //Инициализируем маски
+    //РРЅРёС†РёР°Р»РёР·РёСЂСѓРµРј РјР°СЃРєРё
     void beta::initMasks()
     {
         previousFrameDirections.initializeSets(5);
@@ -135,24 +135,24 @@ namespace alg
         {
             for (int j = 0; j < width; j++)
             {
-                //Если точка (i,j) не находится в области возможного движения, 
-                //пропускаем иттерацию
+                //Р•СЃР»Рё С‚РѕС‡РєР° (i,j) РЅРµ РЅР°С…РѕРґРёС‚СЃСЏ РІ РѕР±Р»Р°СЃС‚Рё РІРѕР·РјРѕР¶РЅРѕРіРѕ РґРІРёР¶РµРЅРёСЏ, 
+                //РїСЂРѕРїСѓСЃРєР°РµРј РёС‚С‚РµСЂР°С†РёСЋ
                 if (previousFrameDirections.empty(j, i)) continue;
 
-                //До этого момента мы доходим только в том случае, 
-                //если точка лежит в области возможного движения
+                //Р”Рѕ СЌС‚РѕРіРѕ РјРѕРјРµРЅС‚Р° РјС‹ РґРѕС…РѕРґРёРј С‚РѕР»СЊРєРѕ РІ С‚РѕРј СЃР»СѓС‡Р°Рµ, 
+                //РµСЃР»Рё С‚РѕС‡РєР° Р»РµР¶РёС‚ РІ РѕР±Р»Р°СЃС‚Рё РІРѕР·РјРѕР¶РЅРѕРіРѕ РґРІРёР¶РµРЅРёСЏ
 
-                //Индекс точки (i, j) в массиве data (трёхмерный массив изображения)
+                //РРЅРґРµРєСЃ С‚РѕС‡РєРё (i, j) РІ РјР°СЃСЃРёРІРµ data (С‚СЂС‘С…РјРµСЂРЅС‹Р№ РјР°СЃСЃРёРІ РёР·РѕР±СЂР°Р¶РµРЅРёСЏ)
                 pixelIndex = mat3D::getRawIndex(i, j, 0, width, channels);
-                //Проверяем, имеет ли цвет пиксель по полученному индексу
+                //РџСЂРѕРІРµСЂСЏРµРј, РёРјРµРµС‚ Р»Рё С†РІРµС‚ РїРёРєСЃРµР»СЊ РїРѕ РїРѕР»СѓС‡РµРЅРЅРѕРјСѓ РёРЅРґРµРєСЃСѓ
                 if (getPixel(data, pixelIndex) != white)
                 {
-                    //Глобальная переменная. Считаем +1 к помехам
+                    //Р“Р»РѕР±Р°Р»СЊРЅР°СЏ РїРµСЂРµРјРµРЅРЅР°СЏ. РЎС‡РёС‚Р°РµРј +1 Рє РїРѕРјРµС…Р°Рј
                     global::noiseCount++;
 
                     directionsSet = previousFrameDirections.getConstSet(j, i);
 
-                    //Помечаем прилежащие пиксели, на основании направления их движения, как область возможного движения
+                    //РџРѕРјРµС‡Р°РµРј РїСЂРёР»РµР¶Р°С‰РёРµ РїРёРєСЃРµР»Рё, РЅР° РѕСЃРЅРѕРІР°РЅРёРё РЅР°РїСЂР°РІР»РµРЅРёСЏ РёС… РґРІРёР¶РµРЅРёСЏ, РєР°Рє РѕР±Р»Р°СЃС‚СЊ РІРѕР·РјРѕР¶РЅРѕРіРѕ РґРІРёР¶РµРЅРёСЏ
                     for (int k = 0; k < setSize; k++)
                     {
                         markNeighbors(i, j, height, width, *(directionsSet + k));
@@ -167,12 +167,12 @@ namespace alg
             global::bestImage = global::currentImage;
         }
 
-        //Переносим информацию из маски на текущее изображение
+        //РџРµСЂРµРЅРѕСЃРёРј РёРЅС„РѕСЂРјР°С†РёСЋ РёР· РјР°СЃРєРё РЅР° С‚РµРєСѓС‰РµРµ РёР·РѕР±СЂР°Р¶РµРЅРёРµ
         if(saveImage) applyMask_to_pixelData(data, height, width, channels);
 
-        //Меняем местами предыдущую и текущую матрицы направлений 
+        //РњРµРЅСЏРµРј РјРµСЃС‚Р°РјРё РїСЂРµРґС‹РґСѓС‰СѓСЋ Рё С‚РµРєСѓС‰СѓСЋ РјР°С‚СЂРёС†С‹ РЅР°РїСЂР°РІР»РµРЅРёР№ 
         previousFrameDirections.swap(curentFrameDirections);
-        //Заполняем текущую матрицу направлений нулями
+        //Р—Р°РїРѕР»РЅСЏРµРј С‚РµРєСѓС‰СѓСЋ РјР°С‚СЂРёС†Сѓ РЅР°РїСЂР°РІР»РµРЅРёР№ РЅСѓР»СЏРјРё
         curentFrameDirections.clear(0);
     }
 }

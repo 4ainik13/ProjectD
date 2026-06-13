@@ -8,7 +8,7 @@ namespace
     const unsigned int SCR_WIDTH = 800;
     const unsigned int SCR_HEIGHT = 600;
 
-    int pixelsW = NDC::to_dimension(-0.5f, 0.5f, SCR_WIDTH) / 2; //БАГ в to_dimension. Почему-то получается в 2 раза больше. Поэтому здесь делим на 2
+    int pixelsW = NDC::to_dimension(-0.5f, 0.5f, SCR_WIDTH) / 2; //Р‘РђР“ РІ to_dimension. РџРѕС‡РµРјСѓ-С‚Рѕ РїРѕР»СѓС‡Р°РµС‚СЃСЏ РІ 2 СЂР°Р·Р° Р±РѕР»СЊС€Рµ. РџРѕСЌС‚РѕРјСѓ Р·РґРµСЃСЊ РґРµР»РёРј РЅР° 2
     int pixelsH = NDC::to_dimension(-0.5f, 0.5f, SCR_HEIGHT) / 2;
 
     const int global_pixels_channels = 3;
@@ -40,13 +40,13 @@ namespace
         std::memset(arr, initVal, size);
     }
 
-    //Копирует значения из одного массива в другой. Массивы должны иметь одинковый размер
+    //РљРѕРїРёСЂСѓРµС‚ Р·РЅР°С‡РµРЅРёСЏ РёР· РѕРґРЅРѕРіРѕ РјР°СЃСЃРёРІР° РІ РґСЂСѓРіРѕР№. РњР°СЃСЃРёРІС‹ РґРѕР»Р¶РЅС‹ РёРјРµС‚СЊ РѕРґРёРЅРєРѕРІС‹Р№ СЂР°Р·РјРµСЂ
     void copy_byte_array(const unsigned char* arrGiver, unsigned char* arrTaker, int size)
     {
         std::memcpy(arrTaker, arrGiver, size);
     }
 
-    //Возвращает пиксель из массива data по указанному индексу
+    //Р’РѕР·РІСЂР°С‰Р°РµС‚ РїРёРєСЃРµР»СЊ РёР· РјР°СЃСЃРёРІР° data РїРѕ СѓРєР°Р·Р°РЅРЅРѕРјСѓ РёРЅРґРµРєСЃСѓ
     pixel getPixel(const unsigned char* data, int index)
     {
         return pixel{
@@ -56,8 +56,8 @@ namespace
         };
     }
 
-    //Задаёт указанный пиксель pix в трёхмерном массиве data по индексу index.
-    //Сам index должен быть представлен как абсолютный индекс массива data, указывающий на 0-ой элемент, относящийся к цвету
+    //Р—Р°РґР°С‘С‚ СѓРєР°Р·Р°РЅРЅС‹Р№ РїРёРєСЃРµР»СЊ pix РІ С‚СЂС‘С…РјРµСЂРЅРѕРј РјР°СЃСЃРёРІРµ data РїРѕ РёРЅРґРµРєСЃСѓ index.
+    //РЎР°Рј index РґРѕР»Р¶РµРЅ Р±С‹С‚СЊ РїСЂРµРґСЃС‚Р°РІР»РµРЅ РєР°Рє Р°Р±СЃРѕР»СЋС‚РЅС‹Р№ РёРЅРґРµРєСЃ РјР°СЃСЃРёРІР° data, СѓРєР°Р·С‹РІР°СЋС‰РёР№ РЅР° 0-РѕР№ СЌР»РµРјРµРЅС‚, РѕС‚РЅРѕСЃСЏС‰РёР№СЃСЏ Рє С†РІРµС‚Сѓ
     void setPixel(unsigned char* data, int index, pixel& pix)
     {
         data[index] = pix.r;
@@ -65,7 +65,7 @@ namespace
         data[index + 2] = pix.b;
     }
 
-    //Меняем пиксель по адресу index со смешиванием пикселя pix
+    //РњРµРЅСЏРµРј РїРёРєСЃРµР»СЊ РїРѕ Р°РґСЂРµСЃСѓ index СЃРѕ СЃРјРµС€РёРІР°РЅРёРµРј РїРёРєСЃРµР»СЏ pix
     void blendPixel(unsigned char* data, int index, pixel& pix)
     {
         pixel pixAtIndex = getPixel(data, index);
@@ -75,14 +75,14 @@ namespace
         }
     }
 
-    //Помечаем пиксель по координатам width_index и height_index в маске при помощи 1
+    //РџРѕРјРµС‡Р°РµРј РїРёРєСЃРµР»СЊ РїРѕ РєРѕРѕСЂРґРёРЅР°С‚Р°Рј width_index Рё height_index РІ РјР°СЃРєРµ РїСЂРё РїРѕРјРѕС‰Рё 1
     void markPixel(int height_index, int width_index, int width)
     {
         int rawIndex = mat2D::getRawIndex(height_index, width_index, width);
         global_pixelsMask_curent[rawIndex] = 1;
     }
 
-    //Помечаем всех соседей пикселя с координатами width_index и height_index
+    //РџРѕРјРµС‡Р°РµРј РІСЃРµС… СЃРѕСЃРµРґРµР№ РїРёРєСЃРµР»СЏ СЃ РєРѕРѕСЂРґРёРЅР°С‚Р°РјРё width_index Рё height_index
     void markNeighbors(int height_index, int width_index, int height, int width)
     {
         for (int i = height_index - 1; i <= height_index + 1; i++)
@@ -98,7 +98,7 @@ namespace
         }
     }
 
-    //Накладываем маску на картинку, которая хранится в data
+    //РќР°РєР»Р°РґС‹РІР°РµРј РјР°СЃРєСѓ РЅР° РєР°СЂС‚РёРЅРєСѓ, РєРѕС‚РѕСЂР°СЏ С…СЂР°РЅРёС‚СЃСЏ РІ data
     void applyMask_to_pixelData(unsigned char* data, const unsigned char* mask, int height, int width, int channels)
     {
         pixel pix{ 0, 255, 0 };
@@ -110,15 +110,15 @@ namespace
         {
             for (int j = 0; j < width; j++)
             {
-                //Получаем индекс точки (i,j) в маске
+                //РџРѕР»СѓС‡Р°РµРј РёРЅРґРµРєСЃ С‚РѕС‡РєРё (i,j) РІ РјР°СЃРєРµ
                 maskIndex = mat2D::getRawIndex(i, j, width);
-                //Получаем значение из маски
+                //РџРѕР»СѓС‡Р°РµРј Р·РЅР°С‡РµРЅРёРµ РёР· РјР°СЃРєРё
                 maskVal = global_pixelsMask_curent[maskIndex];
                 if (maskVal == 1)
                 {
-                    //Получаем индекс точки (i,j) в массиве изображения data
+                    //РџРѕР»СѓС‡Р°РµРј РёРЅРґРµРєСЃ С‚РѕС‡РєРё (i,j) РІ РјР°СЃСЃРёРІРµ РёР·РѕР±СЂР°Р¶РµРЅРёСЏ data
                     pixelIndex = mat3D::getRawIndex(i, j, 0, width, channels);
-                    //Расскрашиваем пиксель точки (i,j) в зелённый цвет
+                    //Р Р°СЃСЃРєСЂР°С€РёРІР°РµРј РїРёРєСЃРµР»СЊ С‚РѕС‡РєРё (i,j) РІ Р·РµР»С‘РЅРЅС‹Р№ С†РІРµС‚
                     blendPixel(data, pixelIndex, pix);
                 }
             }
@@ -128,7 +128,7 @@ namespace
 
 namespace alg
 {
-    //Инициализируем маски
+    //РРЅРёС†РёР°Р»РёР·РёСЂСѓРµРј РјР°СЃРєРё
     void initMasks()
     {
         init_byte_array(global_pixelsMask_previous, global_pixels_size, 1);
@@ -147,22 +147,22 @@ namespace alg
         {
             for (int j = 0; j < width; j++)
             {
-                //Если точка (i,j) не находится в области возможного движения, 
-                //пропускаем иттерацию
+                //Р•СЃР»Рё С‚РѕС‡РєР° (i,j) РЅРµ РЅР°С…РѕРґРёС‚СЃСЏ РІ РѕР±Р»Р°СЃС‚Рё РІРѕР·РјРѕР¶РЅРѕРіРѕ РґРІРёР¶РµРЅРёСЏ, 
+                //РїСЂРѕРїСѓСЃРєР°РµРј РёС‚С‚РµСЂР°С†РёСЋ
                 if (global_pixelsMask_previous[mat2D::getRawIndex(i, j, width)] == 0)
                     continue;
 
-                //До этого момента мы доходим только в том случае, 
-                //если точка лежит в области возможного движения
+                //Р”Рѕ СЌС‚РѕРіРѕ РјРѕРјРµРЅС‚Р° РјС‹ РґРѕС…РѕРґРёРј С‚РѕР»СЊРєРѕ РІ С‚РѕРј СЃР»СѓС‡Р°Рµ, 
+                //РµСЃР»Рё С‚РѕС‡РєР° Р»РµР¶РёС‚ РІ РѕР±Р»Р°СЃС‚Рё РІРѕР·РјРѕР¶РЅРѕРіРѕ РґРІРёР¶РµРЅРёСЏ
 
-                //Индекс точки (i, j) в массиве data (трёхмерный массив изображения)
+                //РРЅРґРµРєСЃ С‚РѕС‡РєРё (i, j) РІ РјР°СЃСЃРёРІРµ data (С‚СЂС‘С…РјРµСЂРЅС‹Р№ РјР°СЃСЃРёРІ РёР·РѕР±СЂР°Р¶РµРЅРёСЏ)
                 pixelIndex = mat3D::getRawIndex(i, j, 0, width, channels);
-                //Проверяем, имеет ли цвет пиксель по полученному индексу
+                //РџСЂРѕРІРµСЂСЏРµРј, РёРјРµРµС‚ Р»Рё С†РІРµС‚ РїРёРєСЃРµР»СЊ РїРѕ РїРѕР»СѓС‡РµРЅРЅРѕРјСѓ РёРЅРґРµРєСЃСѓ
                 if (getPixel(data, pixelIndex) != white)
                 {
-                    //Глобальная переменная. Считаем +1 к помехам
+                    //Р“Р»РѕР±Р°Р»СЊРЅР°СЏ РїРµСЂРµРјРµРЅРЅР°СЏ. РЎС‡РёС‚Р°РµРј +1 Рє РїРѕРјРµС…Р°Рј
                     global::noiseCount++;
-                    //Помечаем 9 прилежащих пикселей, как область возможного движения
+                    //РџРѕРјРµС‡Р°РµРј 9 РїСЂРёР»РµР¶Р°С‰РёС… РїРёРєСЃРµР»РµР№, РєР°Рє РѕР±Р»Р°СЃС‚СЊ РІРѕР·РјРѕР¶РЅРѕРіРѕ РґРІРёР¶РµРЅРёСЏ
                     markNeighbors(i, j, height, width);
                 }
             }
@@ -174,12 +174,12 @@ namespace alg
             global::bestImage = global::currentImage;
         }
 
-        //Переносим информацию из маски на текущее изображение
+        //РџРµСЂРµРЅРѕСЃРёРј РёРЅС„РѕСЂРјР°С†РёСЋ РёР· РјР°СЃРєРё РЅР° С‚РµРєСѓС‰РµРµ РёР·РѕР±СЂР°Р¶РµРЅРёРµ
         if(saveImage) applyMask_to_pixelData(data, global_pixelsMask_curent, height, width, channels);
 
-        //Запоминаем текущую маску в качестве предыдущей
+        //Р—Р°РїРѕРјРёРЅР°РµРј С‚РµРєСѓС‰СѓСЋ РјР°СЃРєСѓ РІ РєР°С‡РµСЃС‚РІРµ РїСЂРµРґС‹РґСѓС‰РµР№
         copy_byte_array(global_pixelsMask_curent, global_pixelsMask_previous, global_pixels_size);
-        //Заполняем текущую маску нулями
+        //Р—Р°РїРѕР»РЅСЏРµРј С‚РµРєСѓС‰СѓСЋ РјР°СЃРєСѓ РЅСѓР»СЏРјРё
         init_byte_array(global_pixelsMask_curent, global_pixels_size, 0);
     }
 }

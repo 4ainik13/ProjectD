@@ -33,19 +33,19 @@ private:
 	GLuint vertexShader_ID = 0;
 	GLuint fragmentShader_ID = 0;
 
-	//Создаём Vertex шейдер
+	//РЎРѕР·РґР°С‘Рј Vertex С€РµР№РґРµСЂ
 	void createVertexShader(const char* vertexPath)
 	{
 		createShader(vertexPath, vertexShader_ID, GL_VERTEX_SHADER);
 	}
 
-	//Создаём Fragment шейдер
+	//РЎРѕР·РґР°С‘Рј Fragment С€РµР№РґРµСЂ
 	void createFragmentShader(const char* vertexPath)
 	{
 		createShader(vertexPath, fragmentShader_ID, GL_FRAGMENT_SHADER);
 	}
 
-	//Создаём шейдерную программу
+	//РЎРѕР·РґР°С‘Рј С€РµР№РґРµСЂРЅСѓСЋ РїСЂРѕРіСЂР°РјРјСѓ
 	void createShaderProgram()
 	{
 		shaderProgram_ID = glCreateProgram();
@@ -55,14 +55,14 @@ private:
 		programLinkingErrors(shaderProgram_ID);
 	}
 
-	//Удалям использованные шейдеры
+	//РЈРґР°Р»СЏРј РёСЃРїРѕР»СЊР·РѕРІР°РЅРЅС‹Рµ С€РµР№РґРµСЂС‹
 	void deleteShaders()
 	{
 		glDeleteShader(vertexShader_ID);
 		glDeleteShader(fragmentShader_ID);
 	}
 
-	//Обобщённая функция создания шейдеров
+	//РћР±РѕР±С‰С‘РЅРЅР°СЏ С„СѓРЅРєС†РёСЏ СЃРѕР·РґР°РЅРёСЏ С€РµР№РґРµСЂРѕРІ
 	void createShader(const char* shaderPath, GLuint& shaderID, GLenum shaderType)
 	{
 		std::string shader_string = readShaderFile(shaderPath);
@@ -74,12 +74,12 @@ private:
 		shaderCompileErrors(shaderID);
 	}
 
-	//Вывод ошибок компиляции шейдера
+	//Р’С‹РІРѕРґ РѕС€РёР±РѕРє РєРѕРјРїРёР»СЏС†РёРё С€РµР№РґРµСЂР°
 	void shaderCompileErrors(GLuint& shaderID)
 	{
-		//Флаг успешной компиляции
+		//Р¤Р»Р°Рі СѓСЃРїРµС€РЅРѕР№ РєРѕРјРїРёР»СЏС†РёРё
 		GLint hasCompiled;
-		//Массив под сообщение об ошибке
+		//РњР°СЃСЃРёРІ РїРѕРґ СЃРѕРѕР±С‰РµРЅРёРµ РѕР± РѕС€РёР±РєРµ
 		char infoLog[1024];
 
 		glGetShaderiv(shaderID, GL_COMPILE_STATUS, &hasCompiled);
@@ -90,12 +90,12 @@ private:
 		}
 	}
 
-	//Вывод ошибок связывания программы
+	//Р’С‹РІРѕРґ РѕС€РёР±РѕРє СЃРІСЏР·С‹РІР°РЅРёСЏ РїСЂРѕРіСЂР°РјРјС‹
 	void programLinkingErrors(GLuint& programID)
 	{
-		//Флаг успешной компиляции
+		//Р¤Р»Р°Рі СѓСЃРїРµС€РЅРѕР№ РєРѕРјРїРёР»СЏС†РёРё
 		GLint hasCompiled;
-		//Массив под сообщение об ошибке
+		//РњР°СЃСЃРёРІ РїРѕРґ СЃРѕРѕР±С‰РµРЅРёРµ РѕР± РѕС€РёР±РєРµ
 		char infoLog[1024];
 
 		glGetProgramiv(programID, GL_LINK_STATUS, &hasCompiled);
@@ -106,7 +106,7 @@ private:
 		}
 	}
 
-	//Чтение шейдера из файла
+	//Р§С‚РµРЅРёРµ С€РµР№РґРµСЂР° РёР· С„Р°Р№Р»Р°
 	std::string readShaderFile(std::string shaderPath)
 	{
 		std::ifstream in_shaderStream(shaderPath);

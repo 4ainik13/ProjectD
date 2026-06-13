@@ -10,7 +10,7 @@
 #include <direct.h>
 #include <iostream>
 
-//Мои заголовки
+//РњРѕРё Р·Р°РіРѕР»РѕРІРєРё
 #include "shaderHandler.h"
 #include "stopwatch.h"
 #include "ndc.h"
@@ -26,7 +26,7 @@
 using namespace glm;
 using namespace global;
 
-//Фунции
+//Р¤СѓРЅРєС†РёРё
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow* window);
 void processDisplay(GLFWwindow* window, const GLuint shaderProgram, const GLuint vao);
@@ -45,7 +45,7 @@ GLuint global_shaderProgram = 0;
 bool global_sessionStarted = false;
 int global_imageCount = 0;
 
-//Общие переменные
+//РћР±С‰РёРµ РїРµСЂРµРјРµРЅРЅС‹Рµ
 ImageHandler imageHandler;
 bool readInitialPixels;
 bool saveImage;
@@ -55,13 +55,13 @@ time_t randSeed;
 time_t randSeedMod = 1779000000;
 Stopwatch fpsWatch;
 
-//uniform переменные
+//uniform РїРµСЂРµРјРµРЅРЅС‹Рµ
 GLfloat noiseProbability;
 GLint noiseSeed;
 vec2 a_vec;
 vec2 b_vec;
 
-//Полный размер кадра (не окна)
+//РџРѕР»РЅС‹Р№ СЂР°Р·РјРµСЂ РєР°РґСЂР° (РЅРµ РѕРєРЅР°)
 GLsizei pixelsW = FRAME_WIDTH;
 GLsizei pixelsH = FRAME_HEIGHT;
 GLuint pixelsX = FRAME_X;
@@ -87,77 +87,77 @@ unsigned int indices[] = {  // note that we start from 0!
 int seedArray[] = { 880928, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 bool useSeedArray = false;
 
-//Программа
+//РџСЂРѕРіСЂР°РјРјР°
 int main()
 {
-    //0. Инициализация GLFW, окна, GLAD и прочих функций
+    //0. РРЅРёС†РёР°Р»РёР·Р°С†РёСЏ GLFW, РѕРєРЅР°, GLAD Рё РїСЂРѕС‡РёС… С„СѓРЅРєС†РёР№
     glfwInit();
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3); //Говорим OpenGL, что хотим использовать версию 3.x
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3); //Говорим OpenGL, что хотим использовать версию x.3
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE); //Говорим, что используем профиль core
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3); //Р“РѕРІРѕСЂРёРј OpenGL, С‡С‚Рѕ С…РѕС‚РёРј РёСЃРїРѕР»СЊР·РѕРІР°С‚СЊ РІРµСЂСЃРёСЋ 3.x
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3); //Р“РѕРІРѕСЂРёРј OpenGL, С‡С‚Рѕ С…РѕС‚РёРј РёСЃРїРѕР»СЊР·РѕРІР°С‚СЊ РІРµСЂСЃРёСЋ x.3
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE); //Р“РѕРІРѕСЂРёРј, С‡С‚Рѕ РёСЃРїРѕР»СЊР·СѓРµРј РїСЂРѕС„РёР»СЊ core
 
-    //Создаём окно
+    //РЎРѕР·РґР°С‘Рј РѕРєРЅРѕ
     GLFWwindow* window = glfwCreateWindow(800, 600, "ProjectD", NULL, NULL);
     
-    //Инициализируем переменные, передаваемые вместе с окном
+    //РРЅРёС†РёР°Р»РёР·РёСЂСѓРµРј РїРµСЂРµРјРµРЅРЅС‹Рµ, РїРµСЂРµРґР°РІР°РµРјС‹Рµ РІРјРµСЃС‚Рµ СЃ РѕРєРЅРѕРј
     Stopwatch window_watch = Stopwatch();
     
-    //Запоминаем адреса переменных
+    //Р—Р°РїРѕРјРёРЅР°РµРј Р°РґСЂРµСЃР° РїРµСЂРµРјРµРЅРЅС‹С…
     glfwSetWindowUserPointer(window, &window_watch);
 
-    if (window == NULL) //Проверяем, что окно создалось
+    if (window == NULL) //РџСЂРѕРІРµСЂСЏРµРј, С‡С‚Рѕ РѕРєРЅРѕ СЃРѕР·РґР°Р»РѕСЃСЊ
     {
         std::cout << "Failed to create GLFW window" << std::endl;
-        glfwTerminate(); //Освобождаем ресурсы
+        glfwTerminate(); //РћСЃРІРѕР±РѕР¶РґР°РµРј СЂРµСЃСѓСЂСЃС‹
         return -1;
     }
     
-    glfwMakeContextCurrent(window); //Указываем текущее главное окно
+    glfwMakeContextCurrent(window); //РЈРєР°Р·С‹РІР°РµРј С‚РµРєСѓС‰РµРµ РіР»Р°РІРЅРѕРµ РѕРєРЅРѕ
 
-    //Инициализация GLAD
+    //РРЅРёС†РёР°Р»РёР·Р°С†РёСЏ GLAD
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
     {
         std::cout << "Failed to initialize GLAD" << std::endl;
         return -1;
     }
 
-    //Определяем размер видимого окна
+    //РћРїСЂРµРґРµР»СЏРµРј СЂР°Р·РјРµСЂ РІРёРґРёРјРѕРіРѕ РѕРєРЅР°
     glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
     
-    //Привязываем функцию framebuffer_size_callback к событию изменения размера окна. 
-    //Теперь эта функция будет вызываться при каждом изменении размера окна
+    //РџСЂРёРІСЏР·С‹РІР°РµРј С„СѓРЅРєС†РёСЋ framebuffer_size_callback Рє СЃРѕР±С‹С‚РёСЋ РёР·РјРµРЅРµРЅРёСЏ СЂР°Р·РјРµСЂР° РѕРєРЅР°. 
+    //РўРµРїРµСЂСЊ СЌС‚Р° С„СѓРЅРєС†РёСЏ Р±СѓРґРµС‚ РІС‹Р·С‹РІР°С‚СЊСЃСЏ РїСЂРё РєР°Р¶РґРѕРј РёР·РјРµРЅРµРЅРёРё СЂР°Р·РјРµСЂР° РѕРєРЅР°
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
     
-    //1. Создаём vao
+    //1. РЎРѕР·РґР°С‘Рј vao
     GLuint vao;
     //!!!!
     glGenVertexArrays(1, &vao);
 
     glBindVertexArray(vao);
 
-    //2. Создаём vbo
+    //2. РЎРѕР·РґР°С‘Рј vbo
     GLuint vbo;
     glGenBuffers(1, &vbo);
 
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
-    //glEnableVertexAttribArray(0); можно выполнять и после того, как мы разметили
-    //данные атрибута (потому что он включается на vao?). 
-    //Но для здравого смысла будем включать соответсвующий
-    //атрибут перед тем как разметить соответсвующие ему данные, а не после.
+    //glEnableVertexAttribArray(0); РјРѕР¶РЅРѕ РІС‹РїРѕР»РЅСЏС‚СЊ Рё РїРѕСЃР»Рµ С‚РѕРіРѕ, РєР°Рє РјС‹ СЂР°Р·РјРµС‚РёР»Рё
+    //РґР°РЅРЅС‹Рµ Р°С‚СЂРёР±СѓС‚Р° (РїРѕС‚РѕРјСѓ С‡С‚Рѕ РѕРЅ РІРєР»СЋС‡Р°РµС‚СЃСЏ РЅР° vao?). 
+    //РќРѕ РґР»СЏ Р·РґСЂР°РІРѕРіРѕ СЃРјС‹СЃР»Р° Р±СѓРґРµРј РІРєР»СЋС‡Р°С‚СЊ СЃРѕРѕС‚РІРµС‚СЃРІСѓСЋС‰РёР№
+    //Р°С‚СЂРёР±СѓС‚ РїРµСЂРµРґ С‚РµРј РєР°Рє СЂР°Р·РјРµС‚РёС‚СЊ СЃРѕРѕС‚РІРµС‚СЃРІСѓСЋС‰РёРµ РµРјСѓ РґР°РЅРЅС‹Рµ, Р° РЅРµ РїРѕСЃР»Рµ.
     glEnableVertexAttribArray(0);
 
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
 
-    //3. Создаём ebo
+    //3. РЎРѕР·РґР°С‘Рј ebo
     GLuint ebo;
     glGenBuffers(1, &ebo);
 
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
-    //4-6. Создание шейдеров и программы шейдеров
+    //4-6. РЎРѕР·РґР°РЅРёРµ С€РµР№РґРµСЂРѕРІ Рё РїСЂРѕРіСЂР°РјРјС‹ С€РµР№РґРµСЂРѕРІ
     const char* vertexPath = "./default.vert";
     const char* fragmentPath = "./default.frag";
     ShaderHandler shaderHnd(vertexPath, fragmentPath);
@@ -165,12 +165,12 @@ int main()
     global_shaderProgram = shaderProgram;
     glUseProgram(shaderProgram);
 
-    //6.5. Создаём второй набор буферов и шейдеров для отрисовки pbo
+    //6.5. РЎРѕР·РґР°С‘Рј РІС‚РѕСЂРѕР№ РЅР°Р±РѕСЂ Р±СѓС„РµСЂРѕРІ Рё С€РµР№РґРµСЂРѕРІ РґР»СЏ РѕС‚СЂРёСЃРѕРІРєРё pbo
     tex::createShaderProgram();
     tex::genVertBuffers();
     tex::genTexBuffer();
 
-    //7. Подготовка шейдерных переменных
+    //7. РџРѕРґРіРѕС‚РѕРІРєР° С€РµР№РґРµСЂРЅС‹С… РїРµСЂРµРјРµРЅРЅС‹С…
     vec2 res = vec2(SCR_WIDTH, SCR_HEIGHT);
     mat4 trans = createTransformMatrix(SCR_WIDTH, SCR_HEIGHT, vec2(-0.5f, 0.5f), vec2(-0.5f, 0.5f));
     a_vec = vec2(5.f, 5.f); //5.0 5.0
@@ -191,8 +191,8 @@ int main()
     GLint u_aLoc = glGetUniformLocation(shaderProgram, "u_a");
     GLint u_bLoc = glGetUniformLocation(shaderProgram, "u_b");
 
-    //2fv => один вектор из двух float
-    //count = 1 => один вектор из двух float
+    //2fv => РѕРґРёРЅ РІРµРєС‚РѕСЂ РёР· РґРІСѓС… float
+    //count = 1 => РѕРґРёРЅ РІРµРєС‚РѕСЂ РёР· РґРІСѓС… float
     glUniform2fv(u_resLoc, 1, glm::value_ptr(res));
     glUniformMatrix4fv(u_transformLoc, 1, GL_FALSE, glm::value_ptr(trans));
     glUniform1f(u_timeLoc, glfwGetTime());
@@ -202,7 +202,7 @@ int main()
     glUniform2fv(u_bLoc, 1, glm::value_ptr(b_vec));
 
 
-    //8. Подготовка к рендеру
+    //8. РџРѕРґРіРѕС‚РѕРІРєР° Рє СЂРµРЅРґРµСЂСѓ
     imageHandler = ImageHandler(SCR_WIDTH * SCR_HEIGHT * CLR_CHANNELS, 2);
     readInitialPixels = false;
 
@@ -210,18 +210,18 @@ int main()
     Latex<double> frameTable = Latex<double>(1, 10);
 
     experiment = 0;
-    maxExperiment = 0; // 9 для десяти экспериментов
+    maxExperiment = 0; // 9 РґР»СЏ РґРµСЃСЏС‚Рё СЌРєСЃРїРµСЂРёРјРµРЅС‚РѕРІ
 
     double fps = 0;
     Statistics statist;
     statist.initRows(maxExperiment+1);
 
     int ticks = 10000;
-    double delay = 0; //0.025 = 25 миллисекунд
+    double delay = 0; //0.025 = 25 РјРёР»Р»РёСЃРµРєСѓРЅРґ
     window_watch.set(delay, ticks); //0.025
     printAddress("window_watch", "main", &window_watch);
 
-    //Задаём цвет очистки (заливки) окна
+    //Р—Р°РґР°С‘Рј С†РІРµС‚ РѕС‡РёСЃС‚РєРё (Р·Р°Р»РёРІРєРё) РѕРєРЅР°
     glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 
     glUseProgram(shaderProgram);
@@ -229,7 +229,7 @@ int main()
 
     //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
-    //9. Рендер
+    //9. Р РµРЅРґРµСЂ
     latex.parseSeed(randSeed, experiment);
     saveImage = false;
     while (!glfwWindowShouldClose(window))
@@ -251,8 +251,8 @@ int main()
 
         if (window_watch.ticked() && minNoiseCount > 1)
         {
-            //Артефакаты при [201-275] + pbo
-            int d_width = BMP_WIDTH, d_height = BMP_HEIGHT; //изначально 160
+            //РђСЂС‚РµС„Р°РєР°С‚С‹ РїСЂРё [201-275] + pbo
+            int d_width = BMP_WIDTH, d_height = BMP_HEIGHT; //РёР·РЅР°С‡Р°Р»СЊРЅРѕ 160
             //if (imageHandler.imageCounter % 100 == 0) saveImage = true;
             //else saveImage = false;
             saveImage = false;
@@ -266,13 +266,13 @@ int main()
             latex.parse(noiseCount, experiment, imageHandler.imageCounter-1);
         }
 
-        glfwSwapBuffers(window); //Меняем местами передний и задний буферы рендера окна (два больших массива цветов)
-        glfwPollEvents(); //Обрабатываем все произошедшие события. Вызываем связанные callback-функции
+        glfwSwapBuffers(window); //РњРµРЅСЏРµРј РјРµСЃС‚Р°РјРё РїРµСЂРµРґРЅРёР№ Рё Р·Р°РґРЅРёР№ Р±СѓС„РµСЂС‹ СЂРµРЅРґРµСЂР° РѕРєРЅР° (РґРІР° Р±РѕР»СЊС€РёС… РјР°СЃСЃРёРІР° С†РІРµС‚РѕРІ)
+        glfwPollEvents(); //РћР±СЂР°Р±Р°С‚С‹РІР°РµРј РІСЃРµ РїСЂРѕРёР·РѕС€РµРґС€РёРµ СЃРѕР±С‹С‚РёСЏ. Р’С‹Р·С‹РІР°РµРј СЃРІСЏР·Р°РЅРЅС‹Рµ callback-С„СѓРЅРєС†РёРё
 
         if (window_watch.noTicks() || minNoiseCount <= 1)
         {
-            //перезапускаем всё это дело
-            //!!! Отменить инициализацию в denoise_alg !!!
+            //РїРµСЂРµР·Р°РїСѓСЃРєР°РµРј РІСЃС‘ СЌС‚Рѕ РґРµР»Рѕ
+            //!!! РћС‚РјРµРЅРёС‚СЊ РёРЅРёС†РёР°Р»РёР·Р°С†РёСЋ РІ denoise_alg !!!
             experiment++;
 
             imageHandler.imageCounter = 0;
@@ -306,7 +306,7 @@ int main()
     frameTable.parseVector(statist.average(), 0);
     frameTable.writeTabular("frameTable.txt");
 
-    //10. Освобождаем ресурсы
+    //10. РћСЃРІРѕР±РѕР¶РґР°РµРј СЂРµСЃСѓСЂСЃС‹
     glDeleteVertexArrays(1, &vao);
     glDeleteBuffers(1, &vbo);
     glDeleteBuffers(1, &ebo);
@@ -344,7 +344,7 @@ void processDisplay(GLFWwindow* window, const GLuint shaderProgram, const GLuint
 {
     shaderUpdate(window);
 
-    glClear(GL_COLOR_BUFFER_BIT); //Очищаем буфер окна (задаём одноцветный фон)
+    glClear(GL_COLOR_BUFFER_BIT); //РћС‡РёС‰Р°РµРј Р±СѓС„РµСЂ РѕРєРЅР° (Р·Р°РґР°С‘Рј РѕРґРЅРѕС†РІРµС‚РЅС‹Р№ С„РѕРЅ)
 
     glUseProgram(shaderProgram);
     glBindVertexArray(vao);
@@ -393,8 +393,8 @@ void startSession(GLFWwindow* window)
     }
 }
 
-//Отладочная функция.
-//Выводит на консоль данные из массива пикселей в необработанном виде
+//РћС‚Р»Р°РґРѕС‡РЅР°СЏ С„СѓРЅРєС†РёСЏ.
+//Р’С‹РІРѕРґРёС‚ РЅР° РєРѕРЅСЃРѕР»СЊ РґР°РЅРЅС‹Рµ РёР· РјР°СЃСЃРёРІР° РїРёРєСЃРµР»РµР№ РІ РЅРµРѕР±СЂР°Р±РѕС‚Р°РЅРЅРѕРј РІРёРґРµ
 void printPixels(const unsigned char* pixels, int channels, GLsizei width, GLsizei height)
 {
     unsigned char colorChars[4] = { 'R', 'G', 'B', 'A' };
@@ -441,8 +441,8 @@ mat4 createTransformMatrix(GLuint scrW, GLuint scrH,
     return p_s * p_t;
 }
 
-//Отладочная функция.
-//Вывод на консоль адреса переменной.
+//РћС‚Р»Р°РґРѕС‡РЅР°СЏ С„СѓРЅРєС†РёСЏ.
+//Р’С‹РІРѕРґ РЅР° РєРѕРЅСЃРѕР»СЊ Р°РґСЂРµСЃР° РїРµСЂРµРјРµРЅРЅРѕР№.
 void printAddress(const char* varName, const char* funcName, void* addresToPrint)
 {
     //printf(varName + " in " funcName + " : %p", addresToPrint);

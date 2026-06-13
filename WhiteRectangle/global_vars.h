@@ -13,13 +13,13 @@ namespace global
 	const GLuint SCR_HEIGHT = 600;
 	const GLuint CLR_CHANNELS = 3;
 
-	const uint FRAME_WIDTH = NDC::to_dimension(-0.5f, 0.5f, SCR_WIDTH) / 2; //БАГ в to_dimension. Почему-то получается в 2 раза больше. Поэтому здесь делим на 2
+	const uint FRAME_WIDTH = NDC::to_dimension(-0.5f, 0.5f, SCR_WIDTH) / 2; //Р‘РђР“ РІ to_dimension. РџРѕС‡РµРјСѓ-С‚Рѕ РїРѕР»СѓС‡Р°РµС‚СЃСЏ РІ 2 СЂР°Р·Р° Р±РѕР»СЊС€Рµ. РџРѕСЌС‚РѕРјСѓ Р·РґРµСЃСЊ РґРµР»РёРј РЅР° 2
 	const uint FRAME_HEIGHT = NDC::to_dimension(-0.5f, 0.5f, SCR_HEIGHT) / 2;
 	const uint FRAME_X = NDC::to_viewport(-0.5f, SCR_WIDTH);
 	const uint FRAME_Y = NDC::to_viewport(-0.5f, SCR_HEIGHT);
 
-	const uint BMP_WIDTH = 200;		//Изначально 160 200 400
-	const uint BMP_HEIGHT = 200;	//Изначально 160 200 300
+	const uint BMP_WIDTH = 200;		//РР·РЅР°С‡Р°Р»СЊРЅРѕ 160 200 400
+	const uint BMP_HEIGHT = 200;	//РР·РЅР°С‡Р°Р»СЊРЅРѕ 160 200 300
 
 	extern uint noiseCount;
 	extern uint minNoiseCount;

@@ -56,7 +56,7 @@ public:
         pboArray.unmapBuffer();
     }
 
-    //Читаем пиксели с экрана впервый раз, чтобы заполнить пустой pbo.
+    //Р§РёС‚Р°РµРј РїРёРєСЃРµР»Рё СЃ СЌРєСЂР°РЅР° РІРїРµСЂРІС‹Р№ СЂР°Р·, С‡С‚РѕР±С‹ Р·Р°РїРѕР»РЅРёС‚СЊ РїСѓСЃС‚РѕР№ pbo.
     void initialPixelsRead(const int& startX, const int& startY,
         const unsigned int& height, const unsigned int& width)
     {
@@ -64,9 +64,9 @@ public:
         if(bufferData_ptr) pboArray.unmapBuffer();
     }
 
-    //Сохраняем картинку из pbo несколькими способами.
-    //После выполнения функции, данные 
-    //изображения, которое хранится в pbo, могут измениться.
+    //РЎРѕС…СЂР°РЅСЏРµРј РєР°СЂС‚РёРЅРєСѓ РёР· pbo РЅРµСЃРєРѕР»СЊРєРёРјРё СЃРїРѕСЃРѕР±Р°РјРё.
+    //РџРѕСЃР»Рµ РІС‹РїРѕР»РЅРµРЅРёСЏ С„СѓРЅРєС†РёРё, РґР°РЅРЅС‹Рµ 
+    //РёР·РѕР±СЂР°Р¶РµРЅРёСЏ, РєРѕС‚РѕСЂРѕРµ С…СЂР°РЅРёС‚СЃСЏ РІ pbo, РјРѕРіСѓС‚ РёР·РјРµРЅРёС‚СЊСЃСЏ.
     void saveImage_differentWays(const int& startX, const int& startY,
         const unsigned int& height, const unsigned int& width,
         const unsigned int& channels = 3, std::string name = "test", bool doSave = true)
@@ -110,8 +110,8 @@ public:
         saveImage_fromData(data, height, width, channels, name + std::to_string(imageCounter), doSave);
     }
 
-    //Сохраняем текущий кадр в формате bmp на компьютере.
-    //Кадр получаем из pbo.
+    //РЎРѕС…СЂР°РЅСЏРµРј С‚РµРєСѓС‰РёР№ РєР°РґСЂ РІ С„РѕСЂРјР°С‚Рµ bmp РЅР° РєРѕРјРїСЊСЋС‚РµСЂРµ.
+    //РљР°РґСЂ РїРѕР»СѓС‡Р°РµРј РёР· pbo.
     void saveImage_fromScreen(const int& startX, const int& startY,
         const unsigned int& height, const unsigned int& width,
         const unsigned int& channels = 3, std::string name = "test")
@@ -126,8 +126,8 @@ public:
         }
     }
 
-    //Сохраняем текущий кадр в формате bmp с подсчётом сохранённых кадров.
-    //Полученный кадр будт иметь имя в формате nameX.bmp, где X - номер кадра
+    //РЎРѕС…СЂР°РЅСЏРµРј С‚РµРєСѓС‰РёР№ РєР°РґСЂ РІ С„РѕСЂРјР°С‚Рµ bmp СЃ РїРѕРґСЃС‡С‘С‚РѕРј СЃРѕС…СЂР°РЅС‘РЅРЅС‹С… РєР°РґСЂРѕРІ.
+    //РџРѕР»СѓС‡РµРЅРЅС‹Р№ РєР°РґСЂ Р±СѓРґС‚ РёРјРµС‚СЊ РёРјСЏ РІ С„РѕСЂРјР°С‚Рµ nameX.bmp, РіРґРµ X - РЅРѕРјРµСЂ РєР°РґСЂР°
     void saveImage_fromScreen_counting(const int& startX, const int& startY,
         const unsigned int& height, const unsigned int& width,
         const unsigned int& channels = 3, std::string name = "test")

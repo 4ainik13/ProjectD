@@ -63,11 +63,11 @@ namespace tex
 
     void genVertBuffers()
     {
-        //Ñîçäà¸ì vao
+        //Ð¡Ð¾Ð·Ð´Ð°Ñ‘Ð¼ vao
         glGenVertexArrays(1, &vao);
         glBindVertexArray(vao);
 
-        //Ñîçäà¸ì vbo
+        //Ð¡Ð¾Ð·Ð´Ð°Ñ‘Ð¼ vbo
         glGenBuffers(1, &vbo);
 
         glBindBuffer(GL_ARRAY_BUFFER, vbo);
@@ -77,7 +77,7 @@ namespace tex
 
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
 
-        //Ñîçäà¸ì ebo
+        //Ð¡Ð¾Ð·Ð´Ð°Ñ‘Ð¼ ebo
         glGenBuffers(1, &ebo);
 
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);

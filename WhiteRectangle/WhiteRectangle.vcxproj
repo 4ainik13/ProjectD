@@ -168,7 +168,6 @@
     <ClInclude Include="latex.h" />
     <ClInclude Include="matrix_set.h" />
     <ClInclude Include="my_debug.h" />
-    <ClInclude Include="EBO.h" />
     <ClInclude Include="matrix.h" />
     <ClInclude Include="ndc.h" />
     <ClInclude Include="pbo_tex.h" />
@@ -178,7 +177,6 @@
     <ClInclude Include="statistics.h" />
     <ClInclude Include="stb_image_write.h" />
     <ClInclude Include="stopwatch.h" />
-    <ClInclude Include="VAO.h" />
     <ClInclude Include="VBO.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
