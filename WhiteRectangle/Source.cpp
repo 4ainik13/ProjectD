@@ -26,7 +26,7 @@
 using namespace glm;
 using namespace global;
 
-//Функции
+//Фунции
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow* window);
 void processDisplay(GLFWwindow* window, const GLuint shaderProgram, const GLuint vao);
